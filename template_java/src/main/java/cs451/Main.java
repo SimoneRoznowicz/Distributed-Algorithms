@@ -38,12 +38,18 @@ public class Main {
         System.out.println("My ID: " + parser.myId() + "\n");
         System.out.println("List of resolved hosts is:");
         System.out.println("==========================");
+        int yy=0;
         for (Host host: parser.hosts()) {
+        	//AVVIA UNA CLASSE ESEGUIBILE CHE INVII TUTTI I MESSAGGI
+			String str = "CIAO"; 
+			Process process = new Process(str.getBytes(), 1, host.getIp(), host.getPort());
+			process.sendReceiveAll();
             System.out.println(host.getId());
             System.out.println("Human-readable IP: " + host.getIp());
             System.out.println("Human-readable Port: " + host.getPort());
             System.out.println();
         }
+        String str = "CIAO"; 
         System.out.println();
 
         System.out.println("Path to output:");
