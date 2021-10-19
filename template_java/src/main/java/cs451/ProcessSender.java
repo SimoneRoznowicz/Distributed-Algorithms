@@ -6,7 +6,7 @@ import java.net.InetAddress;
 public class ProcessSender {
 	private int length;
 	private byte buf[];
-	private DatagramPacket received_packet;
+	private DatagramPacket rec.eived_packet;
 	private DatagramPacket sent_packet;
 	private int port;
 	private int type; 				//I may send a message with content or it may simply be an acknowledgment message
