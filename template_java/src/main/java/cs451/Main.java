@@ -1,9 +1,17 @@
 package cs451;
 
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.FileNotFoundException;
 import java.net.Socket;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Scanner;
+import java.text.DecimalFormat;
 
 public class Main {
 
@@ -24,7 +32,7 @@ public class Main {
         });
     }
 
-    public static void main(String[] args) throws InterruptedException {
+    public static void main(String[] args) throws InterruptedException, FileNotFoundException {
         Parser parser = new Parser(args);
         parser.parse();
 
@@ -38,18 +46,45 @@ public class Main {
         System.out.println("My ID: " + parser.myId() + "\n");
         System.out.println("List of resolved hosts is:");
         System.out.println("==========================");
-        int yy=0;
+        
+        FileInputStream file = null;
+        try {
+        	file = new FileInputStream("C:/Users/39340/OneDrive/Desktop/cicici.txt");//CAMBIARE NOME!!!!!!!!
+        } catch(FileNotFoundException e) {
+        	e.printStackTrace();
+        }
+        
+		Scanner scanner = new Scanner(file);
+		List<Integer> list= new ArrayList<Integer>();
+		while (scanner.hasNextInt()) {
+		    list.add(scanner.nextInt());
+		}
+		int num_mess_send = list.get(0);
+		int ID_rec_process = list.get(1);
+		int myID = parser.myId();
+		//list of payloads (== list of numbers in ascending order)
+		List<String> list_payloads = new ArrayList<String> (num_mess_send);
+		for (int i=0; i<list_payloads.size(); i++) {
+			String a = i+1+""; 
+			list_payloads.add(a);		//index of payloads goes from 1...n
+		}
+		
+		System.out.println("number of messages to be sent: " + num_mess_send);
+		System.out.println("ID of the process which receives the messages: " + list.get(1));
+        
         for (Host host: parser.hosts()) {
         	//AVVIA UNA CLASSE ESEGUIBILE CHE INVII TUTTI I MESSAGGI
-			String str = "CIAO"; 
-			Process process = new Process(str.getBytes(), 1, host.getIp(), host.getPort());
-			process.sendReceiveAll();
+			try {
+				Process process = new Process(list_payloads, 1, InetAddress.getByName(host.getIp()), host.getPort(), myID, ID_rec_process);
+				process.sendReceiveAll();
+			} catch(UnknownHostException e) {
+	            System.err.println("UnknownHostException");
+			}
             System.out.println(host.getId());
             System.out.println("Human-readable IP: " + host.getIp());
             System.out.println("Human-readable Port: " + host.getPort());
             System.out.println();
         }
-        String str = "CIAO"; 
         System.out.println();
 
         System.out.println("Path to output:");
