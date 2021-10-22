@@ -42,14 +42,14 @@ public class Main {
         long pid = ProcessHandle.current().pid();
         System.out.println("My PID: " + pid + "\n");
         System.out.println("From a new terminal type `kill -SIGINT " + pid + "` or `kill -SIGTERM " + pid + "` to stop processing packets\n");
-
+        
         System.out.println("My ID: " + parser.myId() + "\n");
         System.out.println("List of resolved hosts is:");
         System.out.println("==========================");
         
         FileInputStream file = null;
         try {
-        	file = new FileInputStream("C:/Users/39340/OneDrive/Desktop/cicici.txt");//CAMBIARE NOME!!!!!!!!
+        	file = new FileInputStream(parser.config());//CAMBIARE NOME!!!!!!!!
         } catch(FileNotFoundException e) {
         	e.printStackTrace();
         }
@@ -64,26 +64,42 @@ public class Main {
 		int myID = parser.myId();
 		//list of payloads (== list of numbers in ascending order)
 		List<String> list_payloads = new ArrayList<String> (num_mess_send);
-		for (int i=0; i<list_payloads.size(); i++) {
+		for (int i=0; i<num_mess_send; i++) {
 			String a = i+1+""; 
 			list_payloads.add(a);		//index of payloads goes from 1...n
 		}
 		
+		System.out.println("list_payloads.size() " + list_payloads.size());		
 		System.out.println("number of messages to be sent: " + num_mess_send);
-		System.out.println("ID of the process which receives the messages: " + list.get(1));
+		System.out.println("ID of the process which receives the messages: " + list.get(1) + '\n');
         
         for (Host host: parser.hosts()) {
         	//AVVIA UNA CLASSE ESEGUIBILE CHE INVII TUTTI I MESSAGGI
 			try {
-				Process process = new Process(list_payloads, 1, InetAddress.getByName(host.getIp()), host.getPort(), myID, ID_rec_process);
-				process.sendReceiveAll();
+				System.out.println("YA STO ITERANDO HOSTS \n");
+				System.out.println("host.getId() " + host.getId());
+				System.out.println("myID " + myID);
+				System.out.println("ID_rec_process " + ID_rec_process);
+				
+				if (host.getId() == myID) {
+					Process process = new Process(list_payloads, 1, InetAddress.getByName(host.getIp()), host.getPort(), myID, ID_rec_process);
+					System.out.println("prima di receiveAll()\n");
+					process.receiveAll();
+					System.out.println("dopo di receiveAll()\n");
+				}
+				if (host.getId() == ID_rec_process){
+					Process process = new Process(list_payloads, 1, InetAddress.getByName(host.getIp()), host.getPort(), myID, ID_rec_process);
+					System.out.println("prima di sendAll()\n");
+					process.sendAll();
+					System.out.println("dopo di sendAll()\n");
+				}
 			} catch(UnknownHostException e) {
-	            System.err.println("UnknownHostException");
+				e.printStackTrace();
 			}
-            System.out.println(host.getId());
-            System.out.println("Human-readable IP: " + host.getIp());
-            System.out.println("Human-readable Port: " + host.getPort());
-            System.out.println();
+	        System.out.println(host.getId());
+	        System.out.println("Human-readable IP: " + host.getIp());
+	        System.out.println("Human-readable Port: " + host.getPort());
+	        System.out.println();
         }
         System.out.println();
 
@@ -98,7 +114,12 @@ public class Main {
         System.out.println("Doing some initialization\n");
 
         System.out.println("Broadcasting and delivering messages...\n");
-
+        if(myID==ID_rec_process) {
+            System.out.println("SONO IL PROCESSO CHE RICEVE!!!");
+        }
+        else {
+            System.out.println("SONO IL PROCESSO CHE INVIA!!!");
+        }
         // After a process finishes broadcasting,
         // it waits forever for the delivery of messages.
         while (true) {
