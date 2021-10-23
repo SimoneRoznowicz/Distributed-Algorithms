@@ -10,13 +10,10 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.Executors;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Scanner;
 import java.io.FileWriter;
 
-/*
- * che fare?
- * 1 inviare un messaggio:
- * 		
- */
+
 public class UDP_packet {
 	private int length;
 	private byte buf[];
@@ -28,30 +25,39 @@ public class UDP_packet {
 	private int numMessages;
 	private String outputPath;
 	private MyLogger logger;
+	private String origin;
+	private Parser parser;
 	
 	//received_packet
-	public UDP_packet(int port, String outputPath, int numMessages, MyLogger llogger) {
+	public UDP_packet(int port, String outputPath, int numMessages, MyLogger llogger, InetAddress ip, Parser parser) {
 		this.port=port;
 		this.numMessages=numMessages;
 		this.outputPath=outputPath;
 		logger=llogger;
-		//DatagramPacket received_packet = new DatagramPacket(byte[] buf, 0, buf.length);
+		this.ip=ip;
+		this.parser=parser;
 	}
 	
 	//sent_packet
-	public UDP_packet(byte[] buf, int type, InetAddress ip, int port, MyLogger llogger) {
+	public UDP_packet(byte[] buf, int type, InetAddress ip, int port, MyLogger llogger, Parser parser) {
 		this.buf=buf; 
 		this.type=type;
 		this.port=port;
 		this.length=buf.length;
 		this.ip=ip;
 		logger=llogger;
-		//DatagramPacket sent_packet = new DatagramPacket(buf, 0, buf.length, SocketAddress address);
+		this.parser=parser;
+	}
+	public UDP_packet(byte[] buf, int type, InetAddress ip, int port) {
+		this.buf=buf; 
+		this.type=type;
+		this.port=port;
+		this.length=buf.length;
+		this.ip=ip;
 	}
 	
 	public void send() {
 		DatagramSocket ds = null;
-		ArrayList<String> messages = new ArrayList<String>(10);
 		try {
 			ds = new DatagramSocket();
 		} catch(SocketException e) {
@@ -61,8 +67,10 @@ public class UDP_packet {
 	    try {
 	    	ds.send(dp);  
 	    	String str = new String(dp.getData(), 0, dp.getLength()); 
+			int IDsender = new Scanner(str).nextInt();
+			System.out.println("MyId which is IDsender == " + IDsender);
+	    	str = "b " + str.substring(2);
 	    	logger.add(str);
-			messages.add(str);
 			System.out.println("MESSAGGIO INVIATO:::: " + str);
 	    } catch(IOException e) {
 	    	e.printStackTrace();
@@ -73,7 +81,7 @@ public class UDP_packet {
 	public void receive() {
 		System.out.println("INSIDE RECEIVE METHOD OF UDP_packet");
 		DatagramSocket ds = null;
-		ArrayList<String> messages=null;
+		//ArrayList<String> messages=null;
 		try {
 			ds = new DatagramSocket(port);
 		} catch(SocketException e) {
@@ -83,34 +91,40 @@ public class UDP_packet {
 	    DatagramPacket dp = new DatagramPacket(rec_buf, 1024);  
 	    try {
 			System.out.println("Appena prima di receive");
-			messages = new ArrayList<String>(10);
-			for (int i=0; i<300000/*numMessages*/; i++) {
-			    ds.receive(dp); 
+			//for (int i=0; i<300000/*numMessages*/; i++) {
+			while (true) {		//keeps receiving 
+				ds.receive(dp); 
 			    String str = new String(dp.getData(), 0, dp.getLength()); 
-			    messages.add(str);
-			    str = "d " + "x " + str + "\n";
-			    logger.add(str);
-				System.out.println("MESSAGGIO RICEVUTO:::: " + str);		    
+			    if(str.charAt(0)!=('r')) {	
+					int IDsender = new Scanner(str).nextInt();
+				    origin = IDsender + "";
+				    int myPort = 0;
+				    for (Host host: parser.hosts()) {
+				    	if(host.getId() == IDsender) {
+				    		myPort = host.getPort();
+				    		ip = InetAddress.getByName(host.getIp());
+				    	}
+				    }
+					String ack_buf = "r" + " " + str;   //--> r 1 3    (acknowledgement message 3 from process 1)
+				    str = "d " + origin + " " + str + "\n";
+				    logger.add(str);
+					System.out.println("MESSAGGIO RICEVUTO:::: " + str);
+					//NOW SEND BACK THE ACKNOWLEDGEMENT
+					DatagramSocket ds1 = new DatagramSocket();
+					DatagramPacket dp1 = new DatagramPacket(ack_buf.getBytes(), ack_buf.length(), ip, myPort);
+					
+					ds1.send(dp1);
+			    }
+			    else {  //I'm receiving an ack message: so I should check it and store the content
+			    	str=str.substring(2);   //es 1 3
+					System.out.println("MESSAGGIO RICEVUTO ack:::: " + str);
+					logger.addAck(str);
+			    }
 			}			
 	    } catch(IOException e) {
 		    e.printStackTrace();
 		}
 	   	ds.close(); 
-   		System.out.println("Tutti messaggi ricevuti: ");
-	   	for(String message : messages) {
-	   		System.out.println("message == " + message);
-	   	}
-	   	FileWriter myWriter = null;;
-	   	try {
-	        myWriter = new FileWriter("fileprova.txt");
-	        for (int i=0; i<messages.size(); i++) {
-		        myWriter.write("d " + "1 " + messages.get(i) + "\n");
-			} 
-	        myWriter.close();
-	   	} catch (IOException e) {
-		    e.printStackTrace();
-		}
-        System.out.println("Successfully wrote to the file.");
 	}
 }
 

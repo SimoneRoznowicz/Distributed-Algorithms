@@ -66,7 +66,8 @@ public class Main {
 		//list of payloads (== list of numbers in ascending order)
 		List<String> list_payloads = new ArrayList<String> (num_mess_send);
 		for (int i=0; i<num_mess_send; i++) {
-			String a = i+1+""; 
+			int b = i+1;
+			String a = myID + " " + b;	//example: a == "1 3" where 1 is the ID of the sender, 3 is the 3rd message sent by the process
 			list_payloads.add(a);		//index of payloads goes from 1...n
 		}
 		
@@ -83,13 +84,13 @@ public class Main {
 				System.out.println("ID_rec_process " + ID_rec_process);
 				
 				if (host.getId() == myID) {
-					Process process = new Process(list_payloads, 1, InetAddress.getByName(host.getIp()), host.getPort(), myID, ID_rec_process, parser.output(), logger);
+					Process process = new Process(list_payloads, 1, InetAddress.getByName(host.getIp()), host.getPort(), myID, ID_rec_process, parser.output(), logger, parser);
 					System.out.println("prima di receiveAll()\n");
 					process.receiveAll();
 					System.out.println("dopo di receiveAll()\n");
 				}
 				if (host.getId() == ID_rec_process){
-					Process process = new Process(list_payloads, 1, InetAddress.getByName(host.getIp()), host.getPort(), myID, ID_rec_process, parser.output(), logger);
+					Process process = new Process(list_payloads, 1, InetAddress.getByName(host.getIp()), host.getPort(), myID, ID_rec_process, parser.output(), logger, parser);
 					System.out.println("prima di sendAll()\n");
 					process.sendAll();
 					System.out.println("dopo di sendAll()\n");

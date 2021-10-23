@@ -6,6 +6,7 @@ import java.util.Queue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.Executors;
 import java.util.ArrayList;
+import java.util.concurrent.ExecutorService;
 
 /*
  * Cosa devo fare per implementare acknowledgement?? 
@@ -30,8 +31,9 @@ public class Process {
 	private boolean isInterrupted;
 	private String outputPath;
 	private MyLogger logger;
+	private Parser parser;
 	
-	public Process(List<String> list_payloads, int type, InetAddress ip, int port, int myId, int receiverID, String outputPath, MyLogger llogger) {
+	public Process(List<String> list_payloads, int type, InetAddress ip, int port, int myId, int receiverID, String outputPath, MyLogger llogger, Parser parser) {
 		this.list_payloads=list_payloads;
 		this.type=type;
 		this.ip=ip;
@@ -41,7 +43,7 @@ public class Process {
 		this.outputPath=outputPath;
 		logger=llogger;
 		isInterrupted=false;
-
+		this.parser=parser;
 		// new sender --> do in background send
 		// new receiver --> do in background receive
 	}
@@ -54,28 +56,51 @@ public class Process {
 			ThreadPoolExecutor executor_receive = (ThreadPoolExecutor) Executors.newFixedThreadPool(1);
 			//ThreadPoolExecutor executor_receive = (ThreadPoolExecutor) Executors.newSingleThreadExecutor();
 			//ProcessReceiver proc_rec = new ProcessReceiver(port);
-			UDP_packet rec_pack = new UDP_packet(port, outputPath, list_payloads.size(), logger);
+			UDP_packet rec_pack = new UDP_packet(port, outputPath, list_payloads.size(), logger, ip, parser);
 			//for(int i=0;i<10;i++) {
-				Task_receive task_receive = new Task_receive(rec_pack);
-				executor_receive.execute(task_receive);
+			Task_receive task_receive = new Task_receive(rec_pack);
+			executor_receive.execute(task_receive);
 			//}
 			//rec_pack.receive();
 	        executor_receive.shutdown();
 		}
 	}
 	
-	public void sendAll() {
+	public void sendAll() throws java.net.UnknownHostException{
 		if (myId!=receiverId) {					//This process has to SEND the messages
 			//create the list of ProcessSender messages
 			System.out.println("SONO DENTRO SEND PROCESS, list_payloads.size() == " + list_payloads.size());
 			
+			
+		/////////////////// ricevo tutti ack
+			int myPort=0;
+			InetAddress myIp=null;
+			for (Host host: parser.hosts()) {
+		    	if(host.getId() == parser.myId()) {
+		    		myPort = host.getPort();
+		    		myIp = InetAddress.getByName(host.getIp());
+		    	}
+		    }
+			ExecutorService executor_rec_ack = Executors.newSingleThreadExecutor();
+			//ThreadPoolExecutor executor_rec_ack = (ThreadPoolExecutor) Executors.newSingleThreadExecutor();
+			UDP_packet rec_pack_ack = new UDP_packet(myPort, outputPath, list_payloads.size(), logger, myIp, parser);
+			Task_receive task_rec_ack = new Task_receive(rec_pack_ack);
+			executor_rec_ack.execute(task_rec_ack);			
+		///////////////////
+			
 			number_threads_send=3;
 			ThreadPoolExecutor executor_send = (ThreadPoolExecutor) Executors.newFixedThreadPool(number_threads_send);
 			for (int i=0; i<list_payloads.size(); i++) {
-	            Task_send task_send = new Task_send(list_payloads.get(i).getBytes(), type, ip, port, logger);
+				//QUI CI DEVI METTERE RECIEVE MODIFICATO PER MESSAGGI ACK: FA ESEGUIRE UN SINGLE THREAD APPOSITO
+				//(RICHIAMA SOLO RECEIVE CHE PERO' DEVI MODIFICARE: OGNI ACK CHE RICEVO VIENE INSERITO IN UN SET DEL LOGGER
+				//(COSI' NON HA DUPLICATI!!!!)).
+				//DEVO AVERE ACK DI OGNI MESSAGGIO. SE ME NE MANCA UNO PER IL MESSAGGIO 3 ALLORA IL SENDER REINVIA MESS. 3
+				//
+	            Task_send task_send = new Task_send(list_payloads.get(i).getBytes(), type, ip, port, logger, parser);
 	            executor_send.execute(task_send);
 	        }
 	        executor_send.shutdown();
+	        executor_rec_ack.shutdown();
 		}
 	}
 }

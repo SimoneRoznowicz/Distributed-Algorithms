@@ -9,13 +9,15 @@ public class Task_send implements Runnable {
 	private int type; 				//I may send a message with content or it may simply be an acknowledgment message
 	private InetAddress ip;
 	private MyLogger logger;
+	private Parser parser;
 	
-	public Task_send(byte[] buf, int type, InetAddress ip, int port, MyLogger llogger) {
+	public Task_send(byte[] buf, int type, InetAddress ip, int port, MyLogger llogger, Parser parser) {
 		this.buf=buf;
 		this.type=type;
 		this.ip=ip;
 		this.port=port;
 		logger=llogger;
+		this.parser=parser;
 	}
 		
 	
@@ -25,14 +27,13 @@ public class Task_send implements Runnable {
     }
 	*/
     public void run() {
-    	UDP_packet send_pack = new UDP_packet(buf, type, ip, port, logger); //if type == 0 --> acknowledgement packet 
+    	UDP_packet send_pack = new UDP_packet(buf, type, ip, port, logger, parser); //if type == 0 --> acknowledgement packet 
 		send_pack.send();
 		/*try {
 			Thread.sleep(20);
 		} catch (java.lang.InterruptedException e) {
 			e.printStackTrace();
 		}*/
-		
     }
 }
 
