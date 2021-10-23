@@ -4,9 +4,9 @@ cs451\Host.class
 cs451\ProcessReceiver.class
 cs451\ConfigParser.class
 cs451\Task_receive.class
+cs451\MyLogger.class
 cs451\Coordinator.class
 cs451\UDP_packet.class
-cs451\ProcessSender.class
 cs451\Main.class
 cs451\Parser.class
 cs451\HostsParser$HostsComparator.class

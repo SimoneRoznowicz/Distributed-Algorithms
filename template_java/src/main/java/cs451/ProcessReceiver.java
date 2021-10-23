@@ -12,8 +12,8 @@ public class ProcessReceiver {
 	public void receiveMessage() {
 		while(true) {
 			//keeps listening to messages coming through the specified port
-			UDP_packet rec_pack = new UDP_packet(port);
-			rec_pack.receive();
+			//UDP_packet rec_pack = new UDP_packet(port);
+			//rec_pack.receive();
 		}
 	}
 }

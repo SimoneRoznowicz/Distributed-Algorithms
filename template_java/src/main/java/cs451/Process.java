@@ -7,12 +7,10 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.Executors;
 import java.util.ArrayList;
 
-
 /*
- * Goal of the class:
- * - send a message
- * - receive acknowledgement message
- * - resend a message if not arrived 
+ * Cosa devo fare per implementare acknowledgement?? 
+ * - mando un messaggio, thread.sleep(millisecondi)
+ * - se in questo tempo NON arriva un messaggio ack numero del messaggio, allora reinvio il messaggio (lo gestisce chi??)
  */
 
 public class Process {
@@ -26,21 +24,23 @@ public class Process {
 	private int myId;
 	private int receiverId;
 	private InetAddress ip;
-	private List<ProcessSender> mess_queue;
 	private List<String> list_payloads;
 	private int number_threads_send;
 	private int number_threads_receive;
 	private boolean isInterrupted;
+	private String outputPath;
+	private MyLogger logger;
 	
-	public Process(List<String> list_payloads, int type, InetAddress ip, int port, int myId, int receiverID) {
+	public Process(List<String> list_payloads, int type, InetAddress ip, int port, int myId, int receiverID, String outputPath, MyLogger llogger) {
 		this.list_payloads=list_payloads;
 		this.type=type;
 		this.ip=ip;
 		this.port=port;
 		this.myId=myId;
 		this.receiverId=receiverID;
+		this.outputPath=outputPath;
+		logger=llogger;
 		isInterrupted=false;
-		mess_queue = new ArrayList<ProcessSender> (10);
 
 		// new sender --> do in background send
 		// new receiver --> do in background receive
@@ -54,7 +54,7 @@ public class Process {
 			ThreadPoolExecutor executor_receive = (ThreadPoolExecutor) Executors.newFixedThreadPool(1);
 			//ThreadPoolExecutor executor_receive = (ThreadPoolExecutor) Executors.newSingleThreadExecutor();
 			//ProcessReceiver proc_rec = new ProcessReceiver(port);
-			UDP_packet rec_pack = new UDP_packet(port);
+			UDP_packet rec_pack = new UDP_packet(port, outputPath, list_payloads.size(), logger);
 			//for(int i=0;i<10;i++) {
 				Task_receive task_receive = new Task_receive(rec_pack);
 				executor_receive.execute(task_receive);
@@ -68,15 +68,11 @@ public class Process {
 		if (myId!=receiverId) {					//This process has to SEND the messages
 			//create the list of ProcessSender messages
 			System.out.println("SONO DENTRO SEND PROCESS, list_payloads.size() == " + list_payloads.size());
-			/*for (int i=0; i<list_payloads.size(); i++) {
-				ProcessSender proc_sen = new ProcessSender(list_payloads.get(i).getBytes(), type, ip, port);
-				mess_queue.add(proc_sen);
-			}*/
+			
 			number_threads_send=3;
-			System.out.println("Numero di messaggi (ProcessSender) da mandare == " + mess_queue.size());
 			ThreadPoolExecutor executor_send = (ThreadPoolExecutor) Executors.newFixedThreadPool(number_threads_send);
 			for (int i=0; i<list_payloads.size(); i++) {
-	            Task_send task_send = new Task_send(list_payloads.get(i).getBytes(), type, ip, port);
+	            Task_send task_send = new Task_send(list_payloads.get(i).getBytes(), type, ip, port, logger);
 	            executor_send.execute(task_send);
 	        }
 	        executor_send.shutdown();

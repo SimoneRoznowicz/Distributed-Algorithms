@@ -15,19 +15,19 @@ import java.text.DecimalFormat;
 
 public class Main {
 
-    private static void handleSignal() {
+    private static void handleSignal(MyLogger logger) {
         //immediately stop network packet processing
         System.out.println("Immediately stopping network packet processing.");
-
+        logger.writeOutput();
         //write/flush output file if necessary
         System.out.println("Writing output.");
     }
 
-    private static void initSignalHandlers() {
+    private static void initSignalHandlers(MyLogger logger) {
         Runtime.getRuntime().addShutdownHook(new Thread() {
             @Override
             public void run() {
-                handleSignal();
+                handleSignal(logger);
             }
         });
     }
@@ -36,7 +36,8 @@ public class Main {
         Parser parser = new Parser(args);
         parser.parse();
 
-        initSignalHandlers();
+        MyLogger logger = new MyLogger(parser.output());
+        initSignalHandlers(logger);
 
         // example
         long pid = ProcessHandle.current().pid();
@@ -82,13 +83,13 @@ public class Main {
 				System.out.println("ID_rec_process " + ID_rec_process);
 				
 				if (host.getId() == myID) {
-					Process process = new Process(list_payloads, 1, InetAddress.getByName(host.getIp()), host.getPort(), myID, ID_rec_process);
+					Process process = new Process(list_payloads, 1, InetAddress.getByName(host.getIp()), host.getPort(), myID, ID_rec_process, parser.output(), logger);
 					System.out.println("prima di receiveAll()\n");
 					process.receiveAll();
 					System.out.println("dopo di receiveAll()\n");
 				}
 				if (host.getId() == ID_rec_process){
-					Process process = new Process(list_payloads, 1, InetAddress.getByName(host.getIp()), host.getPort(), myID, ID_rec_process);
+					Process process = new Process(list_payloads, 1, InetAddress.getByName(host.getIp()), host.getPort(), myID, ID_rec_process, parser.output(), logger);
 					System.out.println("prima di sendAll()\n");
 					process.sendAll();
 					System.out.println("dopo di sendAll()\n");
