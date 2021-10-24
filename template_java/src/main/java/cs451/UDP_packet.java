@@ -70,7 +70,7 @@ public class UDP_packet {
 			int IDsender = new Scanner(str).nextInt();
 	    	str = "b " + str.substring(2) + "\n";
 	    	logger.add(str);
-			System.out.println("MESSAGGIO INVIATO:::: " + str);
+			//System.out.println("MESSAGGIO INVIATO:::: " + str);
 	    } catch(IOException e) {
 	    	e.printStackTrace();
 	    }
@@ -109,7 +109,7 @@ public class UDP_packet {
 					String ack_buf = "r " + numberMessage;   //--> r 3    (acknowledgement message 3 from process 1)
 				    str = "d " + str + "\n";   
 				    logger.add(str);
-					System.out.println("MESSAGGIO RICEVUTO:::: " + str);
+					//System.out.println("MESSAGGIO RICEVUTO:::: " + str);
 					//NOW SEND BACK THE ACKNOWLEDGEMENT
 					DatagramSocket ds1 = new DatagramSocket();
 					DatagramPacket dp1 = new DatagramPacket(ack_buf.getBytes(), ack_buf.length(), ip, senderPort);
@@ -118,7 +118,7 @@ public class UDP_packet {
 			    }
 			    else {  //I'm the sender and I'm receiving an ack message: so I should check it and store the content
 			    	str=str.substring(2);   //es r 43 (number of the message)
-					System.out.println("MESSAGGIO RICEVUTO ack:::: " + str);
+					//System.out.println("MESSAGGIO RICEVUTO ack:::: " + str);
 					logger.addAck(str);
 			    }
 			}			
@@ -128,7 +128,6 @@ public class UDP_packet {
 	   	ds.close(); 
 	}
 }
-
 
 
 

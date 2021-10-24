@@ -32,19 +32,20 @@ public class MyLogger {
 	}
 	
 	public ArrayList<String> check() {
-		ArrayList<String> list = new ArrayList<String>();
+		//ArrayList<String> list = new ArrayList<String>();
 		ArrayList<String> list_missing = new ArrayList<String>();
-		for(String s : logs_ack_set) {
+		/*for(String s : logs_ack_set) {
 			list.add(s);
-		}
-		System.out.println("list == " + list);
+		}*/
+		/*System.out.println("list == " + list);
 		System.out.println("list_missing.size() == " + list_missing.size());
 		System.out.println("logs_ack_set == " + logs_ack_set);
-
+		System.out.println("tot_number_messages == " + tot_number_messages);
+*/
 		for(int i=0; i<tot_number_messages; i++) {
 			//System.out.println("elemento ack numero " + i + " e' " + list.get(i));
 			int b=i+1;
-			if(!list.contains(b+"")) {
+			if(!logs_ack_set.contains(b+"")) {
 				//add to messages missing
 				list_missing.add(b+"");
 			}

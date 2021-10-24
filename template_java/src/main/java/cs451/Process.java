@@ -52,7 +52,7 @@ public class Process {
 		//QUI CI PUOI METTERE IL FILTRO: RICEVI SE SEI ID DA RICEVERE, SENNO' INVIA
 		//mess_queue.size()>=10 ? number_threads=mess_queue.size()/10 : number_threads=1;
 		if(myId==receiverId) {	//This process has to RECEIVE the messages
-			System.out.println("SONO DENTRO RECEIVE PROCESS");
+			//System.out.println("SONO DENTRO RECEIVE PROCESS");
 			ThreadPoolExecutor executor_receive = (ThreadPoolExecutor) Executors.newFixedThreadPool(1);
 			//ThreadPoolExecutor executor_receive = (ThreadPoolExecutor) Executors.newSingleThreadExecutor();
 			//ProcessReceiver proc_rec = new ProcessReceiver(port);
@@ -69,7 +69,7 @@ public class Process {
 	public void sendAll() throws java.net.UnknownHostException{
 		if (myId!=receiverId) {					//This process has to SEND the messages
 			//create the list of ProcessSender messages
-			System.out.println("SONO DENTRO SEND PROCESS, list_payloads.size() == " + list_payloads.size());
+			//System.out.println("SONO DENTRO SEND PROCESS, list_payloads.size() == " + list_payloads.size());
 			
 			
 		/////////////////// ricevo tutti ack
@@ -103,13 +103,22 @@ public class Process {
 			ArrayList<String> list_missing = logger.check();
 			int myID = parser.myId();
 			while(list_missing.size()!=0) {
-				System.out.println("list_missing.size() == " + list_missing.size());
+				//if(list_missing.size()==1) {
+				//System.out.println("list_missing.size() == " + list_missing.size());
+				//}
+				//System.out.println("list_missing.size() == " + list_missing.size());
 				list_missing = logger.check();
 				for(int i=0; i<list_missing.size(); i++) {
 					Task_send task_send = new Task_send((myID + " " + list_missing.get(i)).getBytes(), type, ip, port, logger, parser);
 	            	executor_send.execute(task_send);
 				}
+				try {
+					Thread.sleep(400);
+				} catch (java.lang.InterruptedException e) {
+					e.printStackTrace();
+				}
 			}
+			
 	        executor_send.shutdown();
 	        executor_rec_ack.shutdown();
 		}
