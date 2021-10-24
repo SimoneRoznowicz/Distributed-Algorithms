@@ -81,22 +81,17 @@ public class Main {
         for (Host host: parser.hosts()) {
         	//AVVIA UNA CLASSE ESEGUIBILE CHE INVII TUTTI I MESSAGGI
 			try {
-				System.out.println("YA STO ITERANDO HOSTS \n");
-				System.out.println("host.getId() " + host.getId());
-				System.out.println("myID " + myID);
-				System.out.println("ID_rec_process " + ID_rec_process);
+				//System.out.println("host.getId() " + host.getId());
+				//System.out.println("myID " + myID);
+				//System.out.println("ID_rec_process " + ID_rec_process);
 				
 				if (host.getId() == myID) {
 					Process process = new Process(list_payloads, 1, InetAddress.getByName(host.getIp()), host.getPort(), myID, ID_rec_process, parser.output(), logger, parser);
-					System.out.println("prima di receiveAll()\n");
 					process.receiveAll();
-					System.out.println("dopo di receiveAll()\n");
 				}
 				if (host.getId() == ID_rec_process){
 					Process process = new Process(list_payloads, 1, InetAddress.getByName(host.getIp()), host.getPort(), myID, ID_rec_process, parser.output(), logger, parser);
-					System.out.println("prima di sendAll()\n");
 					process.sendAll();
-					System.out.println("dopo di sendAll()\n");
 				}
 			} catch(UnknownHostException e) {
 				e.printStackTrace();
@@ -120,10 +115,10 @@ public class Main {
 
         System.out.println("Broadcasting and delivering messages...\n");
         if(myID==ID_rec_process) {
-            System.out.println("SONO IL PROCESSO CHE RICEVE!!!");
+            System.out.println("I'M THE RECEIVING PROCESS!!!");
         }
         else {
-            System.out.println("SONO IL PROCESSO CHE INVIA!!!");
+            System.out.println("I'M THE SENDING PROCESS!!!");
         }
         // After a process finishes broadcasting,
         // it waits forever for the delivery of messages.

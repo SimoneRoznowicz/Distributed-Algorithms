@@ -18,8 +18,6 @@ public class Process {
 	
 	private int length;
 	private byte buf[];
-	private DatagramPacket received_packet;
-	private DatagramPacket sent_packet;
 	private int port;
 	private int type; 				//I may send a message with content or it may simply be an acknowledgment message
 	private int myId;
@@ -44,8 +42,6 @@ public class Process {
 		logger=llogger;
 		isInterrupted=false;
 		this.parser=parser;
-		// new sender --> do in background send
-		// new receiver --> do in background receive
 	}
 	
 	public void receiveAll() {
@@ -113,7 +109,18 @@ public class Process {
 	            	executor_send.execute(task_send);
 				}
 				try {
-					Thread.sleep(400);
+					if(list_payloads.size()<300) {
+						Thread.sleep(100);
+					}
+					else if(list_payloads.size()<9500) {
+						Thread.sleep(400);
+					}
+					else if(list_payloads.size()<50000){
+						Thread.sleep(1000);
+					}
+					else {
+						Thread.sleep(2000);
+					}
 				} catch (java.lang.InterruptedException e) {
 					e.printStackTrace();
 				}

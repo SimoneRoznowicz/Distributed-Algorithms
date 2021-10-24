@@ -79,7 +79,7 @@ public class MyLogger {
 	}
 	
 	public void writeOutput() {
-		System.out.print("*** NUMBER OF LOGS *** == " + this.logs.size());
+		System.out.println("*** ROUGH NUMBER OF LOGS *** == " + logs.size());
 		try(BufferedWriter fileWriter = new BufferedWriter(new FileWriter(outputPath))) {
 			for(String log : logs) {
 				fileWriter.write(log);
@@ -88,6 +88,7 @@ public class MyLogger {
 		catch (IOException e) {
 			e.printStackTrace();
 		}
+
 		/*String secondPath = "../example/output/fileout.txt";
 		try(BufferedWriter fileWriter = new BufferedWriter(new FileWriter(secondPath))) {
 			for(String log : logs) {
