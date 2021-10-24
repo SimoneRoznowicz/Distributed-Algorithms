@@ -65,11 +65,10 @@ public class UDP_packet {
 		}
 	    DatagramPacket dp = new DatagramPacket(buf, length, ip, port);		//DatagramPacket(byte[] barr, int length, InetAddress address, int port)
 	    try {
-	    	ds.send(dp);  
+	    	ds.send(dp);  //should ha 1 4 where 1 is the ID of the process and 4 the number of the message
 	    	String str = new String(dp.getData(), 0, dp.getLength()); 
 			int IDsender = new Scanner(str).nextInt();
-			System.out.println("MyId which is IDsender == " + IDsender);
-	    	str = "b " + str.substring(2);
+	    	str = "b " + str.substring(2) + "\n";
 	    	logger.add(str);
 			System.out.println("MESSAGGIO INVIATO:::: " + str);
 	    } catch(IOException e) {
@@ -93,30 +92,32 @@ public class UDP_packet {
 			System.out.println("Appena prima di receive");
 			//for (int i=0; i<300000/*numMessages*/; i++) {
 			while (true) {		//keeps receiving 
-				ds.receive(dp); 
+				ds.receive(dp);   //should ha 1 4 where 1 is the ID of the process and 4 the number of the message
 			    String str = new String(dp.getData(), 0, dp.getLength()); 
 			    if(str.charAt(0)!=('r')) {	
-					int IDsender = new Scanner(str).nextInt();
+			    	Scanner s = new Scanner(str);
+					int IDsender = s.nextInt();
+					int numberMessage = s.nextInt();
 				    origin = IDsender + "";
-				    int myPort = 0;
+				    int senderPort = 0;
 				    for (Host host: parser.hosts()) {
 				    	if(host.getId() == IDsender) {
-				    		myPort = host.getPort();
+				    		senderPort = host.getPort();
 				    		ip = InetAddress.getByName(host.getIp());
 				    	}
 				    }
-					String ack_buf = "r" + " " + str;   //--> r 1 3    (acknowledgement message 3 from process 1)
-				    str = "d " + origin + " " + str + "\n";
+					String ack_buf = "r " + numberMessage;   //--> r 3    (acknowledgement message 3 from process 1)
+				    str = "d " + str + "\n";   
 				    logger.add(str);
 					System.out.println("MESSAGGIO RICEVUTO:::: " + str);
 					//NOW SEND BACK THE ACKNOWLEDGEMENT
 					DatagramSocket ds1 = new DatagramSocket();
-					DatagramPacket dp1 = new DatagramPacket(ack_buf.getBytes(), ack_buf.length(), ip, myPort);
+					DatagramPacket dp1 = new DatagramPacket(ack_buf.getBytes(), ack_buf.length(), ip, senderPort);
 					
 					ds1.send(dp1);
 			    }
-			    else {  //I'm receiving an ack message: so I should check it and store the content
-			    	str=str.substring(2);   //es 1 3
+			    else {  //I'm the sender and I'm receiving an ack message: so I should check it and store the content
+			    	str=str.substring(2);   //es r 43 (number of the message)
 					System.out.println("MESSAGGIO RICEVUTO ack:::: " + str);
 					logger.addAck(str);
 			    }

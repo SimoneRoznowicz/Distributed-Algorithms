@@ -36,9 +36,24 @@ public class Main {
         Parser parser = new Parser(args);
         parser.parse();
 
-        MyLogger logger = new MyLogger(parser.output());
-        initSignalHandlers(logger);
-
+        FileInputStream file = null;
+        try {
+        	file = new FileInputStream(parser.config());
+        } catch(FileNotFoundException e) {
+        	e.printStackTrace();
+        }
+        Scanner scanner = new Scanner(file);
+		List<Integer> list= new ArrayList<Integer>();
+		while (scanner.hasNextInt()) {
+		    list.add(scanner.nextInt());
+		}
+		int num_mess_send = list.get(0);
+		int ID_rec_process = list.get(1);
+		int myID = parser.myId();
+		
+        MyLogger logger = new MyLogger(parser, num_mess_send);
+        initSignalHandlers(logger);		
+		
         // example
         long pid = ProcessHandle.current().pid();
         System.out.println("My PID: " + pid + "\n");
@@ -48,21 +63,9 @@ public class Main {
         System.out.println("List of resolved hosts is:");
         System.out.println("==========================");
         
-        FileInputStream file = null;
-        try {
-        	file = new FileInputStream(parser.config());//CAMBIARE NOME!!!!!!!!
-        } catch(FileNotFoundException e) {
-        	e.printStackTrace();
-        }
         
-		Scanner scanner = new Scanner(file);
-		List<Integer> list= new ArrayList<Integer>();
-		while (scanner.hasNextInt()) {
-		    list.add(scanner.nextInt());
-		}
-		int num_mess_send = list.get(0);
-		int ID_rec_process = list.get(1);
-		int myID = parser.myId();
+        
+
 		//list of payloads (== list of numbers in ascending order)
 		List<String> list_payloads = new ArrayList<String> (num_mess_send);
 		for (int i=0; i<num_mess_send; i++) {

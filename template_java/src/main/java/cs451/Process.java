@@ -88,7 +88,7 @@ public class Process {
 			executor_rec_ack.execute(task_rec_ack);			
 		///////////////////
 			
-			number_threads_send=3;
+			number_threads_send=100;
 			ThreadPoolExecutor executor_send = (ThreadPoolExecutor) Executors.newFixedThreadPool(number_threads_send);
 			for (int i=0; i<list_payloads.size(); i++) {
 				//QUI CI DEVI METTERE RECIEVE MODIFICATO PER MESSAGGI ACK: FA ESEGUIRE UN SINGLE THREAD APPOSITO
@@ -99,6 +99,17 @@ public class Process {
 	            Task_send task_send = new Task_send(list_payloads.get(i).getBytes(), type, ip, port, logger, parser);
 	            executor_send.execute(task_send);
 	        }
+			//now check the list of messages which seem to be not arrived (until there are no messages left to be sent, keep sending the missing ones)
+			ArrayList<String> list_missing = logger.check();
+			int myID = parser.myId();
+			while(list_missing.size()!=0) {
+				System.out.println("list_missing.size() == " + list_missing.size());
+				list_missing = logger.check();
+				for(int i=0; i<list_missing.size(); i++) {
+					Task_send task_send = new Task_send((myID + " " + list_missing.get(i)).getBytes(), type, ip, port, logger, parser);
+	            	executor_send.execute(task_send);
+				}
+			}
 	        executor_send.shutdown();
 	        executor_rec_ack.shutdown();
 		}
