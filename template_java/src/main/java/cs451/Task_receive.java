@@ -11,7 +11,6 @@ public class Task_receive implements Runnable {
     public void run() {
     	//UDP_packet rec_pack = new UDP_packet(port);
 		rec_pack.receive();
-    	//receiver.receiveMessage();
     }
 }
 

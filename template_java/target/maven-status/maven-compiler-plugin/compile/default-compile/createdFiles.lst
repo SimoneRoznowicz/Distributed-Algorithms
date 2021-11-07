@@ -5,6 +5,7 @@ cs451\ConfigParser.class
 cs451\Task_receive.class
 cs451\MyLogger.class
 cs451\Coordinator.class
+cs451\UDP_packet$ClientHandler.class
 cs451\UDP_packet.class
 cs451\Main.class
 cs451\Parser.class

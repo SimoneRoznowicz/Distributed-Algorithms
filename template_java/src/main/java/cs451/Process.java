@@ -7,6 +7,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.Executors;
 import java.util.ArrayList;
 import java.util.concurrent.ExecutorService;
+import java.util.HashSet;
 
 /*
  * Cosa devo fare per implementare acknowledgement?? 
@@ -45,30 +46,17 @@ public class Process {
 	}
 	
 	public void receiveAll() {
-		//QUI CI PUOI METTERE IL FILTRO: RICEVI SE SEI ID DA RICEVERE, SENNO' INVIA
-		//mess_queue.size()>=10 ? number_threads=mess_queue.size()/10 : number_threads=1;
 		if(myId==receiverId) {	//This process has to RECEIVE the messages
-			//System.out.println("SONO DENTRO RECEIVE PROCESS");
 			ThreadPoolExecutor executor_receive = (ThreadPoolExecutor) Executors.newFixedThreadPool(1);
-			//ThreadPoolExecutor executor_receive = (ThreadPoolExecutor) Executors.newSingleThreadExecutor();
-			//ProcessReceiver proc_rec = new ProcessReceiver(port);
 			UDP_packet rec_pack = new UDP_packet(port, outputPath, list_payloads.size(), logger, ip, parser);
-			//for(int i=0;i<10;i++) {
 			Task_receive task_receive = new Task_receive(rec_pack);
 			executor_receive.execute(task_receive);
-			//}
-			//rec_pack.receive();
 	        executor_receive.shutdown();
 		}
 	}
 	
 	public void sendAll() throws java.net.UnknownHostException{
 		if (myId!=receiverId) {					//This process has to SEND the messages
-			//create the list of ProcessSender messages
-			//System.out.println("SONO DENTRO SEND PROCESS, list_payloads.size() == " + list_payloads.size());
-			
-			
-		/////////////////// ricevo tutti ack
 			int myPort=0;
 			InetAddress myIp=null;
 			for (Host host: parser.hosts()) {
@@ -77,39 +65,33 @@ public class Process {
 		    		myIp = InetAddress.getByName(host.getIp());
 		    	}
 		    }
+			//receive all ack packets
 			ExecutorService executor_rec_ack = Executors.newSingleThreadExecutor();
-			//ThreadPoolExecutor executor_rec_ack = (ThreadPoolExecutor) Executors.newSingleThreadExecutor();
 			UDP_packet rec_pack_ack = new UDP_packet(myPort, outputPath, list_payloads.size(), logger, myIp, parser);
 			Task_receive task_rec_ack = new Task_receive(rec_pack_ack);
 			executor_rec_ack.execute(task_rec_ack);			
-		///////////////////
 			
 			number_threads_send=100;
 			ThreadPoolExecutor executor_send = (ThreadPoolExecutor) Executors.newFixedThreadPool(number_threads_send);
 			for (int i=0; i<list_payloads.size(); i++) {
-				//QUI CI DEVI METTERE RECIEVE MODIFICATO PER MESSAGGI ACK: FA ESEGUIRE UN SINGLE THREAD APPOSITO
-				//(RICHIAMA SOLO RECEIVE CHE PERO' DEVI MODIFICARE: OGNI ACK CHE RICEVO VIENE INSERITO IN UN SET DEL LOGGER
-				//(COSI' NON HA DUPLICATI!!!!)).
-				//DEVO AVERE ACK DI OGNI MESSAGGIO. SE ME NE MANCA UNO PER IL MESSAGGIO 3 ALLORA IL SENDER REINVIA MESS. 3
-				//
 	            Task_send task_send = new Task_send(list_payloads.get(i).getBytes(), type, ip, port, logger, parser);
 	            executor_send.execute(task_send);
 	        }
 			//now check the list of messages which seem to be not arrived (until there are no messages left to be sent, keep sending the missing ones)
-			ArrayList<String> list_missing = logger.check();
+			HashSet<String> set_missing = logger.check();
 			int myID = parser.myId();
-			while(list_missing.size()!=0) {
-				//if(list_missing.size()==1) {
-				//System.out.println("list_missing.size() == " + list_missing.size());
-				//}
-				//System.out.println("list_missing.size() == " + list_missing.size());
-				list_missing = logger.check();
-				for(int i=0; i<list_missing.size(); i++) {
-					Task_send task_send = new Task_send((myID + " " + list_missing.get(i)).getBytes(), type, ip, port, logger, parser);
+			while(set_missing.size()!=0) {
+				set_missing = logger.check();
+				//System.out.println(set_missing.size());
+				if(set_missing.size()<100) {System.out.println(set_missing);}
+				for(String missing_msg : set_missing) {
+					Task_send task_send = new Task_send((myID + " " + missing_msg).getBytes(), type, ip, port, logger, parser);
 	            	executor_send.execute(task_send);
 				}
 				try {
-					if(list_payloads.size()<300) {
+					Thread.sleep(1000);
+
+					/*if(list_payloads.size()<300) {
 						Thread.sleep(100);
 					}
 					else if(list_payloads.size()<9500) {
@@ -120,18 +102,16 @@ public class Process {
 					}
 					else {
 						Thread.sleep(2000);
-					}
+					}*/
 				} catch (java.lang.InterruptedException e) {
 					e.printStackTrace();
 				}
 			}
-			
 	        executor_send.shutdown();
 	        executor_rec_ack.shutdown();
 		}
 	}
 }
-
 
 
 

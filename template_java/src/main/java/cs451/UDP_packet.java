@@ -87,15 +87,39 @@ public class UDP_packet {
 			e.printStackTrace();
 		}
 	    byte[] rec_buf = new byte[1024];  
-	    DatagramPacket dp = new DatagramPacket(rec_buf, 1024);  
+	    DatagramPacket dp = new DatagramPacket(rec_buf, 1024);
+	    ThreadPoolExecutor client_handle=null;
 	    try {
 			System.out.println("Appena prima di receive");
-			//for (int i=0; i<300000/*numMessages*/; i++) {
+			client_handle = (ThreadPoolExecutor) Executors.newFixedThreadPool(1000);
 			while (true) {		//keeps receiving 
+				//System.out.println("ciao\n");
 				ds.receive(dp);   //should ha 1 4 where 1 is the ID of the process and 4 the number of the message
-			    String str = new String(dp.getData(), 0, dp.getLength()); 
-			    if(str.charAt(0)!=('r')) {	
-			    	Scanner s = new Scanner(str);
+			    ClientHandler clientSock = new ClientHandler(dp);
+                //new Thread(clientSock).start();
+	            client_handle.execute(clientSock);
+			}		
+	    } catch(IOException e) {
+		    e.printStackTrace();
+		}
+        client_handle.shutdown();
+	   	ds.close(); 
+	}
+	
+	
+	
+	private class ClientHandler implements Runnable {
+        private DatagramPacket dp;
+  
+        public ClientHandler(DatagramPacket dp) {
+            this.dp = dp;
+        }
+  
+        public void run() {
+    	    try {
+			    String msg = new String(dp.getData(), 0, dp.getLength());
+	        	if(msg.charAt(0)!=('r')) {	
+			    	Scanner s = new Scanner(msg);
 					int IDsender = s.nextInt();
 					int numberMessage = s.nextInt();
 				    origin = IDsender + "";
@@ -107,26 +131,29 @@ public class UDP_packet {
 				    	}
 				    }
 					String ack_buf = "r " + numberMessage;   //--> r 3    (acknowledgement message 3 from process 1)
-				    str = "d " + str + "\n";   
-				    logger.add(str);
+				    msg = "d " + msg + "\n";   
 					//System.out.println("MESSAGGIO RICEVUTO:::: " + str);
 					//NOW SEND BACK THE ACKNOWLEDGEMENT
-					DatagramSocket ds1 = new DatagramSocket();
-					DatagramPacket dp1 = new DatagramPacket(ack_buf.getBytes(), ack_buf.length(), ip, senderPort);
-					
-					ds1.send(dp1);
-			    }
+				    if(logger.add(msg)==null) {
+						DatagramSocket ds1 = new DatagramSocket();
+						DatagramPacket dp1 = new DatagramPacket(ack_buf.getBytes(), ack_buf.length(), ip, senderPort);
+						
+						ds1.send(dp1);
+						ds1.close();
+				    }
+				}
 			    else {  //I'm the sender and I'm receiving an ack message: so I should check it and store the content
-			    	str=str.substring(2);   //es r 43 (number of the message)
-					//System.out.println("MESSAGGIO RICEVUTO ack:::: " + str);
-					logger.addAck(str);
+			    	msg=msg.substring(2);   //es r 43 (number of the message)
+			    	/*if(logger.getSize()==0) {
+			    		System.out.println("MESSAGGIO RICEVUTO ack:::: " + msg);
+			    	}*/
+					logger.addAck(msg);
 			    }
-			}			
-	    } catch(IOException e) {
-		    e.printStackTrace();
-		}
-	   	ds.close(); 
-	}
+    	    } catch(IOException e) {
+    		    e.printStackTrace();
+    		}
+        }
+    }
 }
 
 
