@@ -16,7 +16,7 @@ public class MyLogger {
 	ConcurrentHashMap<String,String> logs = new ConcurrentHashMap<String,String>();
 	ConcurrentHashMap<String,String> logs_ack_set = new ConcurrentHashMap<String,String>(); 
 	//ConcurrentHashMap<String,String> new_logs_ack_set = new ConcurrentHashMap<String,String>();
-	HashSet<String> set_missing = new HashSet<String>();
+	ConcurrentHashMap<String,String> set_missing = new ConcurrentHashMap<String,String>();
 
 	private int tot_number_messages;
 	private Parser parser;
@@ -33,7 +33,7 @@ public class MyLogger {
 		//initialize set_missing with all the elements to be sent
 		for(int i=0; i<tot_number_messages; i++) {
 			int b=i+1;
-			set_missing.add(b+"");
+			set_missing.put(b+"",b+"");
 		}
 	}
 	
@@ -51,11 +51,11 @@ public class MyLogger {
 	//	return new_logs_ack_set.size();
 	//}
 	
-	public HashSet<String> check() {
+	public ConcurrentHashMap<String,String> check() {
 		//for(String[] new_log : new_logs_ack_set) {
 			//set_missing.remove(new_log);
 		//}
-		if(valid==10) {
+		if(valid==7) {
 			System.out.println("set_miss.size() == " + set_missing.size());
 			//System.out.println("new_logs_ack_set.size() == " + new_logs_ack_set.size());
 			System.out.println("logs_ack_set.size() == " + logs_ack_set.size()+"\n");

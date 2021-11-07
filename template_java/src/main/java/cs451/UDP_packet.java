@@ -91,7 +91,7 @@ public class UDP_packet {
 	    ThreadPoolExecutor client_handle=null;
 	    try {
 			System.out.println("Appena prima di receive");
-			client_handle = (ThreadPoolExecutor) Executors.newFixedThreadPool(1000);
+			client_handle = (ThreadPoolExecutor) Executors.newFixedThreadPool(4);
 			while (true) {		//keeps receiving 
 				//System.out.println("ciao\n");
 				ds.receive(dp);   //should ha 1 4 where 1 is the ID of the process and 4 the number of the message
@@ -134,13 +134,13 @@ public class UDP_packet {
 				    msg = "d " + msg + "\n";   
 					//System.out.println("MESSAGGIO RICEVUTO:::: " + str);
 					//NOW SEND BACK THE ACKNOWLEDGEMENT
-				    if(logger.add(msg)==null) {
-						DatagramSocket ds1 = new DatagramSocket();
-						DatagramPacket dp1 = new DatagramPacket(ack_buf.getBytes(), ack_buf.length(), ip, senderPort);
-						
-						ds1.send(dp1);
-						ds1.close();
-				    }
+				    logger.add(msg);
+					DatagramSocket ds1 = new DatagramSocket();
+					DatagramPacket dp1 = new DatagramPacket(ack_buf.getBytes(), ack_buf.length(), ip, senderPort);
+					
+					ds1.send(dp1);
+					ds1.close();
+				    //}
 				}
 			    else {  //I'm the sender and I'm receiving an ack message: so I should check it and store the content
 			    	msg=msg.substring(2);   //es r 43 (number of the message)
@@ -155,8 +155,6 @@ public class UDP_packet {
         }
     }
 }
-
-
 
 
 

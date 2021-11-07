@@ -7,6 +7,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.Executors;
 import java.util.ArrayList;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.HashSet;
 
 /*
@@ -78,18 +79,19 @@ public class Process {
 	            executor_send.execute(task_send);
 	        }
 			//now check the list of messages which seem to be not arrived (until there are no messages left to be sent, keep sending the missing ones)
-			HashSet<String> set_missing = logger.check();
+			
+			ConcurrentHashMap<String,String> set_missing = logger.check();
 			int myID = parser.myId();
 			while(set_missing.size()!=0) {
 				set_missing = logger.check();
 				//System.out.println(set_missing.size());
 				if(set_missing.size()<100) {System.out.println(set_missing);}
-				for(String missing_msg : set_missing) {
+				for(String missing_msg : set_missing.keySet()) {
 					Task_send task_send = new Task_send((myID + " " + missing_msg).getBytes(), type, ip, port, logger, parser);
 	            	executor_send.execute(task_send);
 				}
 				try {
-					Thread.sleep(1000);
+					Thread.sleep(100);
 
 					/*if(list_payloads.size()<300) {
 						Thread.sleep(100);
@@ -112,13 +114,4 @@ public class Process {
 		}
 	}
 }
-
-
-
-
-
-
-
-
-
 
