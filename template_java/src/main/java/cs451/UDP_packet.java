@@ -88,68 +88,81 @@ public class UDP_packet {
 		}
 	    byte[] rec_buf = new byte[1024];  
 	    DatagramPacket dp = new DatagramPacket(rec_buf, 1024);
-	    ThreadPoolExecutor client_handle=null;
+	    ThreadPoolExecutor client_handle1=null;
+	    ThreadPoolExecutor client_handle2=null;
 	    try {
 			System.out.println("Appena prima di receive");
-			int num_rec_threads = 25;
-			client_handle = (ThreadPoolExecutor) Executors.newFixedThreadPool(num_rec_threads);
+			int num_rec_threads1 = 5;
+			int num_rec_threads2 = 50;
+			client_handle1 = (ThreadPoolExecutor) Executors.newFixedThreadPool(num_rec_threads1);
+			client_handle2 = (ThreadPoolExecutor) Executors.newFixedThreadPool(num_rec_threads2);
 			while (true) {		//keeps receiving 
 				//System.out.println("ciao\n");
 				ds.receive(dp);   //should ha 1 4 where 1 is the ID of the process and 4 the number of the message
-			    ClientHandler clientSock = new ClientHandler(dp);
-                //new Thread(clientSock).start();
-	            client_handle.execute(clientSock);
+			    String msg = new String(dp.getData(), 0, dp.getLength());
+			    if(msg.charAt(0)!=('r')) {
+			    	ClientHandler clientSock = new ClientHandler(msg);
+		            client_handle1.execute(clientSock);
+			    }
+			    else {  //I'm the sender and I'm receiving an ack message: so I should check it and store the content
+			    	AckHandler ackHandler = new AckHandler(msg);
+		            client_handle2.execute(ackHandler);
+			    }
 			}		
 	    } catch(IOException e) {
 		    e.printStackTrace();
 		}
-        client_handle.shutdown();
+        client_handle1.shutdown();
+        client_handle2.shutdown();
 	   	ds.close(); 
 	}
 	
 	
 	
-	private class ClientHandler implements Runnable {
-        private DatagramPacket dp;
+	private class AckHandler implements Runnable {
+        private String msg;
   
-        public ClientHandler(DatagramPacket dp) {
-            this.dp = dp;
+        public AckHandler(String msg) {
+            this.msg = msg;
+        }
+  
+        public void run() {
+        	msg=msg.substring(2);   //es r 43 (number of the message)
+			logger.addAck(msg);
+        }
+        
+	}
+	
+	private class ClientHandler implements Runnable {
+        private String msg;
+  
+        public ClientHandler(String msg) {
+            this.msg = msg;
         }
   
         public void run() {
     	    try {
-			    String msg = new String(dp.getData(), 0, dp.getLength());
-	        	if(msg.charAt(0)!=('r')) {	
-			    	Scanner s = new Scanner(msg);
-					int IDsender = s.nextInt();
-					int numberMessage = s.nextInt();
-				    origin = IDsender + "";
-				    int senderPort = 0;
-				    for (Host host: parser.hosts()) {
-				    	if(host.getId() == IDsender) {
-				    		senderPort = host.getPort();
-				    		ip = InetAddress.getByName(host.getIp());
-				    	}
-				    }
-					String ack_buf = "r " + numberMessage;   //--> r 3    (acknowledgement message 3 from process 1)
-				    msg = "d " + msg + "\n";   
-					//System.out.println("MESSAGGIO RICEVUTO:::: " + str);
-					//NOW SEND BACK THE ACKNOWLEDGEMENT
-				    logger.add(msg);
-					DatagramSocket ds1 = new DatagramSocket();
-					DatagramPacket dp1 = new DatagramPacket(ack_buf.getBytes(), ack_buf.length(), ip, senderPort);
-					
-					ds1.send(dp1);
-					ds1.close();
-				    //}
-				}
-			    else {  //I'm the sender and I'm receiving an ack message: so I should check it and store the content
-			    	msg=msg.substring(2);   //es r 43 (number of the message)
-			    	//if(logger.getSize()<60000) {
-			    		//System.out.println("MESSAGGIO RICEVUTO ack:::: " + msg);
-			    	//}
-					logger.addAck(msg);
+		    	Scanner s = new Scanner(msg);
+				int IDsender = s.nextInt();
+				int numberMessage = s.nextInt();
+			    origin = IDsender + "";
+			    int senderPort = 0;
+			    for (Host host: parser.hosts()) {
+			    	if(host.getId() == IDsender) {
+			    		senderPort = host.getPort();
+			    		ip = InetAddress.getByName(host.getIp());
+			    	}
 			    }
+				String ack_buf = "r " + numberMessage;   //--> r 3    (acknowledgement message 3 from process 1)
+			    msg = "d " + msg + "\n";   
+				//System.out.println("MESSAGGIO RICEVUTO:::: " + str);
+				//NOW SEND BACK THE ACKNOWLEDGEMENT
+			    logger.add(msg);
+				DatagramSocket ds1 = new DatagramSocket();
+				DatagramPacket dp1 = new DatagramPacket(ack_buf.getBytes(), ack_buf.length(), ip, senderPort);
+				
+				ds1.send(dp1);
+				ds1.close();
     	    } catch(IOException e) {
     		    e.printStackTrace();
     		}
