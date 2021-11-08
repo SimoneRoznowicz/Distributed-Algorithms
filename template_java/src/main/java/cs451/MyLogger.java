@@ -16,7 +16,7 @@ public class MyLogger {
 	ConcurrentHashMap<String,String> logs = new ConcurrentHashMap<String,String>();
 	ConcurrentHashMap<String,String> logs_ack_set = new ConcurrentHashMap<String,String>(); 
 	//ConcurrentHashMap<String,String> new_logs_ack_set = new ConcurrentHashMap<String,String>();
-	ConcurrentHashMap<String,String> set_missing = new ConcurrentHashMap<String,String>();
+	HashSet<String> set_missing = new HashSet<String>();
 
 	private int tot_number_messages;
 	private Parser parser;
@@ -25,6 +25,7 @@ public class MyLogger {
 	private int valid;
 	
 	public MyLogger(Parser parser, int tot_number_messages) {
+		System.out.println("TOT NUM MESSAGES == " + tot_number_messages);
 		this.parser=parser;
 		this.outputPath=parser.output();
 		this.tot_number_messages=tot_number_messages;
@@ -33,12 +34,16 @@ public class MyLogger {
 		//initialize set_missing with all the elements to be sent
 		for(int i=0; i<tot_number_messages; i++) {
 			int b=i+1;
-			set_missing.put(b+"",b+"");
+			set_missing.add(b+"");
 		}
 	}
 	
-	public String add(String log) {
-		return logs.put(log,log);
+	public void add(String log) {
+		logs.put(log,log);
+		if(logs.keySet().size()==2*tot_number_messages) {
+			System.out.println("logs.keySet().size() == " + logs.keySet().size());
+			System.out.println("\n*** RECEIVED ALL MESSAGES ***\n");
+		}
 	}
 	
 	public void addAck(String logAck) {
@@ -47,14 +52,22 @@ public class MyLogger {
 		//}
 		logs_ack_set.put(logAck,logAck);			//1 2 int the receiver, 2 if the process is the sender
 	}
-	//public int getSize() {
-	//	return new_logs_ack_set.size();
-	//}
+	public int getSize() {
+		return logs_ack_set.size();
+	}
 	
-	public ConcurrentHashMap<String,String> check() {
+	public HashSet<String> check() {
 		//for(String[] new_log : new_logs_ack_set) {
 			//set_missing.remove(new_log);
 		//}
+		//System.out.println("go to sleep. . .");
+		/*try {
+			Thread.sleep(1000);
+		} catch( java.lang.InterruptedException e) {
+			e.printStackTrace();
+		}*/
+		//System.out.println("wake up. . .");
+
 		if(valid==7) {
 			System.out.println("set_miss.size() == " + set_missing.size());
 			//System.out.println("new_logs_ack_set.size() == " + new_logs_ack_set.size());

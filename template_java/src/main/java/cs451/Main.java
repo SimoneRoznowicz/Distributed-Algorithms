@@ -77,7 +77,8 @@ public class Main {
 		System.out.println("list_payloads.size() " + list_payloads.size());		
 		System.out.println("number of messages to be sent: " + num_mess_send);
 		System.out.println("ID of the process which receives the messages: " + list.get(1) + '\n');
-        
+        long start = System.currentTimeMillis();
+
         for (Host host: parser.hosts()) {
         	//AVVIA UNA CLASSE ESEGUIBILE CHE INVII TUTTI I MESSAGGI
 			try {
@@ -114,6 +115,10 @@ public class Main {
         System.out.println("Doing some initialization\n");
 
         System.out.println("Broadcasting and delivering messages...\n");
+        long end = System.currentTimeMillis() - start; 
+        float seconds = end / 1000.0f; 
+        System.out.println("DELTA TIME: " + seconds);
+
         if(myID==ID_rec_process) {
             System.out.println("I'M THE RECEIVING PROCESS!!!");
         }

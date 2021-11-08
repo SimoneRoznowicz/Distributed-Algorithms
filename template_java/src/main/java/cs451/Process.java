@@ -56,7 +56,7 @@ public class Process {
 		}
 	}
 	
-	public void sendAll() throws java.net.UnknownHostException{
+	public void sendAll() throws java.net.UnknownHostException {
 		if (myId!=receiverId) {					//This process has to SEND the messages
 			int myPort=0;
 			InetAddress myIp=null;
@@ -72,39 +72,39 @@ public class Process {
 			Task_receive task_rec_ack = new Task_receive(rec_pack_ack);
 			executor_rec_ack.execute(task_rec_ack);			
 			
-			number_threads_send=100;
+			number_threads_send=1;
 			ThreadPoolExecutor executor_send = (ThreadPoolExecutor) Executors.newFixedThreadPool(number_threads_send);
 			for (int i=0; i<list_payloads.size(); i++) {
 	            Task_send task_send = new Task_send(list_payloads.get(i).getBytes(), type, ip, port, logger, parser);
 	            executor_send.execute(task_send);
 	        }
 			//now check the list of messages which seem to be not arrived (until there are no messages left to be sent, keep sending the missing ones)
+			HashSet<String> set_missing=null;
+				set_missing = logger.check();
 			
-			ConcurrentHashMap<String,String> set_missing = logger.check();
 			int myID = parser.myId();
 			while(set_missing.size()!=0) {
 				set_missing = logger.check();
+
 				//System.out.println(set_missing.size());
-				if(set_missing.size()<100) {System.out.println(set_missing);}
-				for(String missing_msg : set_missing.keySet()) {
+				for(String missing_msg : set_missing) {
 					Task_send task_send = new Task_send((myID + " " + missing_msg).getBytes(), type, ip, port, logger, parser);
 	            	executor_send.execute(task_send);
 				}
 				try {
-					Thread.sleep(100);
-
-					/*if(list_payloads.size()<300) {
+					//Thread.sleep(20000);
+					if(set_missing.size()<300) {
 						Thread.sleep(100);
 					}
-					else if(list_payloads.size()<9500) {
-						Thread.sleep(400);
+					else if(set_missing.size()<9500) {
+						Thread.sleep(700);
 					}
-					else if(list_payloads.size()<50000){
-						Thread.sleep(1000);
+					else if(set_missing.size()<50000){
+						Thread.sleep(2000);
 					}
 					else {
-						Thread.sleep(2000);
-					}*/
+						Thread.sleep(4000);
+					}
 				} catch (java.lang.InterruptedException e) {
 					e.printStackTrace();
 				}

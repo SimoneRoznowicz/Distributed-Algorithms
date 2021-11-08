@@ -91,7 +91,8 @@ public class UDP_packet {
 	    ThreadPoolExecutor client_handle=null;
 	    try {
 			System.out.println("Appena prima di receive");
-			client_handle = (ThreadPoolExecutor) Executors.newFixedThreadPool(4);
+			int num_rec_threads = 25;
+			client_handle = (ThreadPoolExecutor) Executors.newFixedThreadPool(num_rec_threads);
 			while (true) {		//keeps receiving 
 				//System.out.println("ciao\n");
 				ds.receive(dp);   //should ha 1 4 where 1 is the ID of the process and 4 the number of the message
@@ -144,9 +145,9 @@ public class UDP_packet {
 				}
 			    else {  //I'm the sender and I'm receiving an ack message: so I should check it and store the content
 			    	msg=msg.substring(2);   //es r 43 (number of the message)
-			    	/*if(logger.getSize()==0) {
-			    		System.out.println("MESSAGGIO RICEVUTO ack:::: " + msg);
-			    	}*/
+			    	//if(logger.getSize()<60000) {
+			    		//System.out.println("MESSAGGIO RICEVUTO ack:::: " + msg);
+			    	//}
 					logger.addAck(msg);
 			    }
     	    } catch(IOException e) {
