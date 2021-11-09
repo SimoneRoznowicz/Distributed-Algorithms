@@ -20,7 +20,6 @@ public class UDP_packet {
 	private DatagramPacket received_packet;
 	private DatagramPacket sent_packet;
 	private int port;
-	private int type; 				//I may send a message with content or it may simply be an acknowledgment message
 	private InetAddress ip;
 	private int numMessages;
 	private String outputPath;
@@ -33,61 +32,57 @@ public class UDP_packet {
 		this.port=port;
 		this.numMessages=numMessages;
 		this.outputPath=outputPath;
-		logger=llogger;
 		this.ip=ip;
 		this.parser=parser;
+		logger=llogger;
 	}
 	
 	//sent_packet
-	public UDP_packet(byte[] buf, int type, InetAddress ip, int port, MyLogger llogger, Parser parser) {
+	public UDP_packet(byte[] buf, InetAddress ip, int port, MyLogger llogger, Parser parser) {
 		this.buf=buf; 
-		this.type=type;
 		this.port=port;
 		this.length=buf.length;
 		this.ip=ip;
-		logger=llogger;
 		this.parser=parser;
-	}
-	public UDP_packet(byte[] buf, int type, InetAddress ip, int port) {
-		this.buf=buf; 
-		this.type=type;
-		this.port=port;
-		this.length=buf.length;
-		this.ip=ip;
+		logger=llogger;
 	}
 	
 	public void send() {
-		DatagramSocket ds = null;
+		DatagramSocket dss = null;
 		try {
-			ds = new DatagramSocket();
+			dss = new DatagramSocket();
 		} catch(SocketException e) {
 			e.printStackTrace();
 		}
-	    DatagramPacket dp = new DatagramPacket(buf, length, ip, port);		//DatagramPacket(byte[] barr, int length, InetAddress address, int port)
+	    DatagramPacket dps = new DatagramPacket(buf, length, ip, port);		//DatagramPacket(byte[] barr, int length, InetAddress address, int port)
 	    try {
-	    	ds.send(dp);  //should ha 1 4 where 1 is the ID of the process and 4 the number of the message
-	    	String str = new String(dp.getData(), 0, dp.getLength()); 
-			int IDsender = new Scanner(str).nextInt();
-	    	str = "b " + str.substring(2) + "\n";
-	    	logger.add(str);
+	    	dss.send(dps);  //should ha 1 4 where 1 is the ID of the process and 4 the number of the message
+	    	String str = new String(dps.getData(), 0, dps.getLength()); 
+	    	Scanner scanner= new Scanner(str);
+			int IDsender = scanner.nextInt();
+			scanner.nextInt();
+			//System.out.println("str ======= " + str);
+			if(!scanner.hasNextInt()) {
+				str = "b " + str.substring(2) + "\n";
+		    	logger.add(str);
+			}
 			//System.out.println("MESSAGGIO INVIATO:::: " + str);
 	    } catch(IOException e) {
 	    	e.printStackTrace();
 	    }
-	    ds.close();  
+	    dss.close();  
 	}
 	
 	public void receive() {
-		System.out.println("INSIDE RECEIVE METHOD OF UDP_packet");
-		DatagramSocket ds = null;
+		DatagramSocket dsr = null;
 		//ArrayList<String> messages=null;
 		try {
-			ds = new DatagramSocket(port);
+			dsr = new DatagramSocket(port);
 		} catch(SocketException e) {
 			e.printStackTrace();
 		}
 	    byte[] rec_buf = new byte[1024];  
-	    DatagramPacket dp = new DatagramPacket(rec_buf, 1024);
+	    DatagramPacket dpr = new DatagramPacket(rec_buf, 1024);
 	    ThreadPoolExecutor client_handle1=null;
 	    ThreadPoolExecutor client_handle2=null;
 	    try {
@@ -98,8 +93,8 @@ public class UDP_packet {
 			client_handle2 = (ThreadPoolExecutor) Executors.newFixedThreadPool(num_rec_threads2);
 			while (true) {		//keeps receiving 
 				//System.out.println("ciao\n");
-				ds.receive(dp);   //should ha 1 4 where 1 is the ID of the process and 4 the number of the message
-			    String msg = new String(dp.getData(), 0, dp.getLength());
+				dsr.receive(dpr);   //should ha 1 4 where 1 is the ID of the process and 4 the number of the message
+			    String msg = new String(dpr.getData(), 0, dpr.getLength());
 			    if(msg.charAt(0)!=('r')) {
 			    	ClientHandler clientSock = new ClientHandler(msg);
 		            client_handle1.execute(clientSock);
@@ -114,7 +109,7 @@ public class UDP_packet {
 		}
         client_handle1.shutdown();
         client_handle2.shutdown();
-	   	ds.close(); 
+	   	dsr.close(); 
 	}
 	
 	
@@ -127,7 +122,7 @@ public class UDP_packet {
         }
   
         public void run() {
-        	msg=msg.substring(2);   //es r 43 (number of the message)
+        	msg=msg.substring(2);   //es r 1 43 (43rd acknowledgement message received form host 1)
 			logger.addAck(msg);
         }
         
@@ -153,8 +148,8 @@ public class UDP_packet {
 			    		ip = InetAddress.getByName(host.getIp());
 			    	}
 			    }
-				String ack_buf = "r " + numberMessage;   //--> r 3    (acknowledgement message 3 from process 1)
-			    msg = "d " + msg + "\n";   
+				String ack_buf = "r " + IDsender + " " + numberMessage;   //--> r 1 43    (acknowledgement message 43 from process 1)
+				msg = "d " + msg + "\n";   
 				//System.out.println("MESSAGGIO RICEVUTO:::: " + str);
 				//NOW SEND BACK THE ACKNOWLEDGEMENT
 			    logger.add(msg);

@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 import java.text.DecimalFormat;
+import java.lang.Thread;
 
 public class Main {
 
@@ -39,6 +40,7 @@ public class Main {
         FileInputStream file = null;
         try {
         	file = new FileInputStream(parser.config());
+		    System.out.println("file config path :: " + parser.config());
         } catch(FileNotFoundException e) {
         	e.printStackTrace();
         }
@@ -48,7 +50,6 @@ public class Main {
 		    list.add(scanner.nextInt());
 		}
 		int num_mess_send = list.get(0);
-		int ID_rec_process = list.get(1);
 		int myID = parser.myId();
 		
         MyLogger logger = new MyLogger(parser, num_mess_send);
@@ -76,26 +77,40 @@ public class Main {
 		
 		System.out.println("list_payloads.size() " + list_payloads.size());		
 		System.out.println("number of messages to be sent: " + num_mess_send);
-		System.out.println("ID of the process which receives the messages: " + list.get(1) + '\n');
         long start = System.currentTimeMillis();
-
+        for (Host host: parser.hosts()) {
+        	System.out.println("host: " + host.getId());
+        }
+    	System.out.println("*********-------------------");
         for (Host host: parser.hosts()) {
         	//AVVIA UNA CLASSE ESEGUIBILE CHE INVII TUTTI I MESSAGGI
-			try {
-				//System.out.println("host.getId() " + host.getId());
-				//System.out.println("myID " + myID);
-				//System.out.println("ID_rec_process " + ID_rec_process);
-				
-				if (host.getId() == myID) {
-					Process process = new Process(list_payloads, 1, InetAddress.getByName(host.getIp()), host.getPort(), myID, ID_rec_process, parser.output(), logger, parser);
-					process.receiveAll();
-				}
-				if (host.getId() == ID_rec_process){
-					Process process = new Process(list_payloads, 1, InetAddress.getByName(host.getIp()), host.getPort(), myID, ID_rec_process, parser.output(), logger, parser);
-					process.sendAll();
-				}
-			} catch(UnknownHostException e) {
-				e.printStackTrace();
+			System.out.println("myID == " + myID);
+			System.out.println("host.getId() == " + host.getId()+ "\n\n");
+			if (host.getId() == myID) {
+				Thread thread = new Thread() {
+				    public void run(){
+				    	try {
+							Process process = new Process(list_payloads, InetAddress.getByName(host.getIp()), host.getPort(), myID, host.getId(), parser.output(), logger, parser);
+							process.receiveAll();
+				    	} catch(UnknownHostException e) {
+				    		e.printStackTrace();
+				    	}
+				    }
+				};
+				thread.start();
+			}
+			if (host.getId() != myID) {
+				Thread thread = new Thread() {
+				    public void run(){
+				    	try {
+							Process process = new Process(list_payloads, InetAddress.getByName(host.getIp()), host.getPort(), myID, host.getId(), parser.output(), logger, parser);
+							process.sendAll();
+				    	} catch(UnknownHostException e) {
+				    		e.printStackTrace();
+				    	}
+				    }
+				};
+				thread.start();
 			}
 	        System.out.println(host.getId());
 	        System.out.println("Human-readable IP: " + host.getIp());
@@ -119,12 +134,7 @@ public class Main {
         float seconds = end / 1000.0f; 
         System.out.println("DELTA TIME: " + seconds);
 
-        if(myID==ID_rec_process) {
-            System.out.println("I'M THE RECEIVING PROCESS!!!");
-        }
-        else {
-            System.out.println("I'M THE SENDING PROCESS!!!");
-        }
+        System.out.println("FINISHED!!!");
         // After a process finishes broadcasting,
         // it waits forever for the delivery of messages.
         while (true) {

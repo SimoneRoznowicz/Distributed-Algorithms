@@ -23,6 +23,7 @@ public class MyLogger {
 	private String outputPath;
 	private int hostsNumber;
 	private int valid;
+	private boolean end;
 	
 	public MyLogger(Parser parser, int tot_number_messages) {
 		System.out.println("TOT NUM MESSAGES == " + tot_number_messages);
@@ -31,18 +32,25 @@ public class MyLogger {
 		this.tot_number_messages=tot_number_messages;
 		hostsNumber = parser.hosts().size();
 		valid=0;
+		end=true;
 		//initialize set_missing with all the elements to be sent
-		for(int i=0; i<tot_number_messages; i++) {
-			int b=i+1;
-			set_missing.add(b+"");
+		for (int i=0; i<tot_number_messages; i++) {
+			for (Host host : parser.hosts()) {
+				if(host.getId() != parser.myId()) {
+					int b=i+1;		//id di un host che deve mandare il msg, numero del messaggio che deve inviare --> es. 1 43
+					set_missing.add(host.getId() + " " + b);	
+				}
+			}
 		}
 	}
 	
 	public void add(String log) {
 		logs.put(log,log);
-		if(logs.keySet().size()==2*tot_number_messages) {
-			System.out.println("logs.keySet().size() == " + logs.keySet().size());
+		//System.out.println("logs.keyset() ========= \n" + logs.keySet());
+		if(end==true && logs.keySet().size()==hostsNumber*tot_number_messages) {
+			//System.out.println("logs.keySet().size() == " + logs.keySet().size());.
 			System.out.println("\n*** RECEIVED ALL MESSAGES ***\n");
+			end=false;
 		}
 	}
 	
@@ -57,21 +65,7 @@ public class MyLogger {
 	}
 	
 	public HashSet<String> check() {
-		//for(String[] new_log : new_logs_ack_set) {
-			//set_missing.remove(new_log);
-		//}
-		//System.out.println("go to sleep. . .");
-		/*try {
-			Thread.sleep(1000);
-		} catch( java.lang.InterruptedException e) {
-			e.printStackTrace();
-		}*/
-		//System.out.println("wake up. . .");
-
 		if(valid==7) {
-			System.out.println("set_miss.size() == " + set_missing.size());
-			//System.out.println("new_logs_ack_set.size() == " + new_logs_ack_set.size());
-			System.out.println("logs_ack_set.size() == " + logs_ack_set.size()+"\n");
 			valid=0;
 		}
 		else {valid++;}
@@ -84,13 +78,16 @@ public class MyLogger {
 	}
 	
 	public void writeOutput() {
-		System.out.println("*** ROUGH NUMBER OF LOGS *** == " + logs.size());
+		System.out.println("*** NUMBER OF LOGS *** == " + logs.size());
 		try(BufferedWriter fileWriter = new BufferedWriter(new FileWriter(outputPath))) {
 			Iterator <String> iter = logs.keySet().iterator();
 			while(iter.hasNext()) {
 				fileWriter.write(iter.next());
 			}
+			//System.out.println("*** set_missing == " + set_missing + " ***");
+			//System.out.println("*** logs_ack_set == " + logs_ack_set.keySet() + " ***");	
 		}
+
 		catch (IOException e) {
 			e.printStackTrace();
 		}

@@ -11,7 +11,7 @@ public class Task_send implements Runnable {
 	private MyLogger logger;
 	private Parser parser;
 	
-	public Task_send(byte[] buf, int type, InetAddress ip, int port, MyLogger llogger, Parser parser) {
+	public Task_send(byte[] buf, InetAddress ip, int port, MyLogger llogger, Parser parser) {
 		this.buf=buf;
 		this.type=type;
 		this.ip=ip;
@@ -20,20 +20,9 @@ public class Task_send implements Runnable {
 		this.parser=parser;
 	}
 		
-	
-	/*ProcessSender message;
-    public Task_send(ProcessSender message) {
-        this.message=message;
-    }
-	*/
     public void run() {
-    	UDP_packet send_pack = new UDP_packet(buf, type, ip, port, logger, parser); //if type == 0 --> acknowledgement packet 
+    	UDP_packet send_pack = new UDP_packet(buf, ip, port, logger, parser); //if type == 0 --> acknowledgement packet 
 		send_pack.send();
-		/*try {
-			Thread.sleep(20);
-		} catch (java.lang.InterruptedException e) {
-			e.printStackTrace();
-		}*/
     }
 }
 

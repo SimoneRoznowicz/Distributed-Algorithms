@@ -21,7 +21,6 @@ public class Process {
 	private int length;
 	private byte buf[];
 	private int port;
-	private int type; 				//I may send a message with content or it may simply be an acknowledgment message
 	private int myId;
 	private int receiverId;
 	private InetAddress ip;
@@ -33,13 +32,12 @@ public class Process {
 	private MyLogger logger;
 	private Parser parser;
 	
-	public Process(List<String> list_payloads, int type, InetAddress ip, int port, int myId, int receiverID, String outputPath, MyLogger llogger, Parser parser) {
+	public Process(List<String> list_payloads, InetAddress ip, int port, int myId, int receiverId, String outputPath, MyLogger llogger, Parser parser) {
 		this.list_payloads=list_payloads;
-		this.type=type;
 		this.ip=ip;
 		this.port=port;
 		this.myId=myId;
-		this.receiverId=receiverID;
+		this.receiverId=receiverId;
 		this.outputPath=outputPath;
 		logger=llogger;
 		isInterrupted=false;
@@ -67,15 +65,16 @@ public class Process {
 		    	}
 		    }
 			//receive all ack packets
-			ExecutorService executor_rec_ack = Executors.newSingleThreadExecutor();
+			/*ExecutorService executor_rec_ack = Executors.newSingleThreadExecutor();
 			UDP_packet rec_pack_ack = new UDP_packet(myPort, outputPath, list_payloads.size(), logger, myIp, parser);
 			Task_receive task_rec_ack = new Task_receive(rec_pack_ack);
 			executor_rec_ack.execute(task_rec_ack);			
-			
+			*/
 			number_threads_send=1;
 			ThreadPoolExecutor executor_send = (ThreadPoolExecutor) Executors.newFixedThreadPool(number_threads_send);
 			for (int i=0; i<list_payloads.size(); i++) {
-	            Task_send task_send = new Task_send(list_payloads.get(i).getBytes(), type, ip, port, logger, parser);
+				//System.out.println("listpayloads.get(i) %%%%%% = " + list_payloads.get(i));
+	            Task_send task_send = new Task_send(list_payloads.get(i).getBytes(), ip, port, logger, parser);
 	            executor_send.execute(task_send);
 	        }
 			//now check the list of messages which seem to be not arrived (until there are no messages left to be sent, keep sending the missing ones)
@@ -88,7 +87,7 @@ public class Process {
 
 				//System.out.println(set_missing.size());
 				for(String missing_msg : set_missing) {
-					Task_send task_send = new Task_send((myID + " " + missing_msg).getBytes(), type, ip, port, logger, parser);
+					Task_send task_send = new Task_send((myID + " " + missing_msg.substring(2)).getBytes(), ip, port, logger, parser);
 	            	executor_send.execute(task_send);
 				}
 				try {
@@ -97,7 +96,7 @@ public class Process {
 						Thread.sleep(100);
 					}
 					else if(set_missing.size()<9500) {
-						Thread.sleep(700);
+						Thread.sleep(400);
 					}
 					else if(set_missing.size()<50000){
 						Thread.sleep(2000);
@@ -110,7 +109,7 @@ public class Process {
 				}
 			}
 	        executor_send.shutdown();
-	        executor_rec_ack.shutdown();
+	        //executor_rec_ack.shutdown();
 		}
 	}
 }
