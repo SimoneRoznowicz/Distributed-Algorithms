@@ -86,17 +86,16 @@ public class Process {
 			
 			int myID = parser.myId();
 			while(sets_missing.get(myID-1).size()!=0) {
-				sets_missing = logger.check();
 
 				//System.out.println(set_missing.size());
 				//for(int i=0; i<sets_missing.size(); i++) {
 				//Iterator <Integer> iter = sets_missing.keySet().iterator();
 				//while(iter.hasNext()) {
 				synchronized (sets_missing) {
-				Iterator iter = sets_missing.iterator(); // Must be in synchronized block
+					sets_missing = logger.check();
+					Iterator iter = sets_missing.iterator(); // Must be in synchronized block
 				    while (iter.hasNext()) {
-						HashSet<String> set=(HashSet<String>)iter.next();
-						for(String missing_msg : set) {
+						for(String missing_msg : (HashSet<String>)iter.next()) {
 							String content = myID + " " + missing_msg.substring(2);
 							//System.out.println("content===== " + content);
 							//System.out.println("missing_msg.substring(2)===== " + missing_msg.substring(2));
@@ -104,8 +103,7 @@ public class Process {
 			            	executor_send.execute(task_send);
 						}
 					}
-				}
-				//}
+				}				//}
 				//}
 				try {
 					//Thread.sleep(20000);
@@ -124,6 +122,7 @@ public class Process {
 				} catch (java.lang.InterruptedException e) {
 					e.printStackTrace();
 				}
+				
 			}
 	        executor_send.shutdown();
 	        //executor_rec_ack.shutdown();

@@ -88,7 +88,7 @@ public class UDP_packet {
 	    try {
 			System.out.println("Appena prima di receive");
 			int num_rec_threads1 = 5;
-			int num_rec_threads2 = 50;
+			int num_rec_threads2 = 220;
 			client_handle1 = (ThreadPoolExecutor) Executors.newFixedThreadPool(num_rec_threads1);
 			client_handle2 = (ThreadPoolExecutor) Executors.newFixedThreadPool(num_rec_threads2);
 			while (true) {		//keeps receiving 

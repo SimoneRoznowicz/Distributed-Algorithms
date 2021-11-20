@@ -26,10 +26,14 @@ public class MyLogger {
 	private String outputPath;
 	private int hostsNumber;
 	private int valid;
-	private boolean end;
+	private boolean endd;
+	long start;
+	long end;
 	
 	
 	public MyLogger(Parser parser, int tot_number_messages) {
+        System.out.println("start time " + start);
+
 		System.out.println("dimensione " + sets_missing.size());
 		if(sets_missing == null) {
 			System.out.println("SET_MISSING E' NULL");
@@ -41,7 +45,7 @@ public class MyLogger {
 		hostsNumber = parser.hosts().size();
 		//sets_missing = new ArrayList<HashSet<String>>();
 		//maps_ack = new ArrayList<ConcurrentHashMap<String,String>>();
-		end=true;
+		endd=true;
 		for (int i=0; i<hostsNumber; i++) {
 			HashSet<String> set = new HashSet<String>();
 			ConcurrentHashMap<String,String> map = new ConcurrentHashMap<String,String>();
@@ -77,10 +81,16 @@ public class MyLogger {
 	public void add(String log) {
 		logs.put(log,log);
 		//System.out.println("logs.keyset() ========= \n" + logs.keySet());
-		if(end==true && logs.keySet().size()==hostsNumber*tot_number_messages) {
+		if(endd==true && logs.keySet().size()==hostsNumber*tot_number_messages) {
 			//System.out.println("logs.keySet().size() == " + logs.keySet().size());.
+	        
 			System.out.println("\n*** RECEIVED ALL MESSAGES ***\n");
-			end=false;
+			//end = System.currentTimeMillis();
+			//System.out.println("end time " + end);
+			//float seconds=(end-start)/1000.0f;
+	        
+	        //System.out.println("DELTA TIME: " + (System.currentTimeMillis()-start)/1000.0f);
+			endd=false;
 		}
 	}
 	
