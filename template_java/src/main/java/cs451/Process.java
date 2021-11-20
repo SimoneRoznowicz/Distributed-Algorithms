@@ -9,6 +9,9 @@ import java.util.ArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.HashSet;
+import java.util.Iterator;
+import java.util.concurrent.CopyOnWriteArrayList;
+
 
 /*
  * Cosa devo fare per implementare acknowledgement?? 
@@ -46,7 +49,7 @@ public class Process {
 	
 	public void receiveAll() {
 		if(myId==receiverId) {	//This process has to RECEIVE the messages
-			ThreadPoolExecutor executor_receive = (ThreadPoolExecutor) Executors.newFixedThreadPool(1);
+			ExecutorService executor_receive = Executors.newSingleThreadExecutor();
 			UDP_packet rec_pack = new UDP_packet(port, outputPath, list_payloads.size(), logger, ip, parser);
 			Task_receive task_receive = new Task_receive(rec_pack);
 			executor_receive.execute(task_receive);
@@ -78,27 +81,41 @@ public class Process {
 	            executor_send.execute(task_send);
 	        }
 			//now check the list of messages which seem to be not arrived (until there are no messages left to be sent, keep sending the missing ones)
-			HashSet<String> set_missing=null;
-				set_missing = logger.check();
+			List<HashSet<String>> sets_missing=null;
+			sets_missing = logger.check();
 			
 			int myID = parser.myId();
-			while(set_missing.size()!=0) {
-				set_missing = logger.check();
+			while(sets_missing.get(myID-1).size()!=0) {
+				sets_missing = logger.check();
 
 				//System.out.println(set_missing.size());
-				for(String missing_msg : set_missing) {
-					Task_send task_send = new Task_send((myID + " " + missing_msg.substring(2)).getBytes(), ip, port, logger, parser);
-	            	executor_send.execute(task_send);
+				//for(int i=0; i<sets_missing.size(); i++) {
+				//Iterator <Integer> iter = sets_missing.keySet().iterator();
+				//while(iter.hasNext()) {
+				synchronized (sets_missing) {
+				Iterator iter = sets_missing.iterator(); // Must be in synchronized block
+				    while (iter.hasNext()) {
+						HashSet<String> set=(HashSet<String>)iter.next();
+						for(String missing_msg : set) {
+							String content = myID + " " + missing_msg.substring(2);
+							//System.out.println("content===== " + content);
+							//System.out.println("missing_msg.substring(2)===== " + missing_msg.substring(2));
+							Task_send task_send = new Task_send((myID + " " + missing_msg.substring(2)).getBytes(), ip, port, logger, parser);
+			            	executor_send.execute(task_send);
+						}
+					}
 				}
+				//}
+				//}
 				try {
 					//Thread.sleep(20000);
-					if(set_missing.size()<300) {
+					if(sets_missing.get(parser.myId()-1).size()<300) {
 						Thread.sleep(100);
 					}
-					else if(set_missing.size()<9500) {
+					else if(sets_missing.get(parser.myId()-1).size()<9500) {
 						Thread.sleep(400);
 					}
-					else if(set_missing.size()<50000){
+					else if(sets_missing.get(parser.myId()-1).size()<50000){
 						Thread.sleep(2000);
 					}
 					else {

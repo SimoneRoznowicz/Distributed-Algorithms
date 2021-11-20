@@ -54,7 +54,7 @@ public class Main {
 		
         MyLogger logger = new MyLogger(parser, num_mess_send);
         initSignalHandlers(logger);		
-		
+        //Thread.sleep(2000);
         // example
         long pid = ProcessHandle.current().pid();
         System.out.println("My PID: " + pid + "\n");
@@ -65,13 +65,11 @@ public class Main {
         System.out.println("==========================");
         
         
-        
-
 		//list of payloads (== list of numbers in ascending order)
 		List<String> list_payloads = new ArrayList<String> (num_mess_send);
 		for (int i=0; i<num_mess_send; i++) {
 			int b = i+1;
-			String a = myID + " " + b;	//example: a == "1 3" where 1 is the ID of the sender, 3 is the 3rd message sent by the process
+			String a = myID + " " + myID+ " " + b;	//example: a == " 1 1 3" where 1 is the ID of the sender, 1 the Id of the original sender, 3 is the 3rd message sent by the process
 			list_payloads.add(a);		//index of payloads goes from 1...n
 		}
 		

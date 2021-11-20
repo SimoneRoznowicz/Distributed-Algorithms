@@ -15,6 +15,7 @@ cs451\HostsParser.class
 cs451\Process.class
 cs451\Main$2.class
 cs451\BarrierParser.class
+FailureDetector.class
 cs451\Constants.class
 cs451\IdParser.class
 cs451\Task_send.class

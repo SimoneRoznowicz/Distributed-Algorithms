@@ -62,10 +62,10 @@ public class UDP_packet {
 			int IDsender = scanner.nextInt();
 			scanner.nextInt();
 			//System.out.println("str ======= " + str);
-			if(!scanner.hasNextInt()) {
-				str = "b " + str.substring(2) + "\n";
+			//if(!scanner.hasNextInt()) {
+				str = "b " + str.substring(4) + "\n";
 		    	logger.add(str);
-			}
+			//}
 			//System.out.println("MESSAGGIO INVIATO:::: " + str);
 	    } catch(IOException e) {
 	    	e.printStackTrace();
@@ -92,7 +92,6 @@ public class UDP_packet {
 			client_handle1 = (ThreadPoolExecutor) Executors.newFixedThreadPool(num_rec_threads1);
 			client_handle2 = (ThreadPoolExecutor) Executors.newFixedThreadPool(num_rec_threads2);
 			while (true) {		//keeps receiving 
-				//System.out.println("ciao\n");
 				dsr.receive(dpr);   //should ha 1 4 where 1 is the ID of the process and 4 the number of the message
 			    String msg = new String(dpr.getData(), 0, dpr.getLength());
 			    if(msg.charAt(0)!=('r')) {
@@ -122,8 +121,11 @@ public class UDP_packet {
         }
   
         public void run() {
-        	msg=msg.substring(2);   //es r 1 43 (43rd acknowledgement message received form host 1)
-			logger.addAck(msg);
+        	msg=msg.substring(2);   //es r 1 1 43 ---> 1 1 43 (43rd acknowledgement message received form host 1)
+			Scanner s = new Scanner(msg);
+			int IDsender = s.nextInt();
+			int IDOriginalSender = s.nextInt();
+        	logger.addAck(IDOriginalSender, msg.substring(msg.indexOf(" ")+1));
         }
         
 	}
@@ -138,7 +140,8 @@ public class UDP_packet {
         public void run() {
     	    try {
 		    	Scanner s = new Scanner(msg);
-				int IDsender = s.nextInt();
+				int IDsender = s.nextInt();		//id of the last sender
+				int IDOriginalSender = s.nextInt();		//id of the original first sender
 				int numberMessage = s.nextInt();
 			    origin = IDsender + "";
 			    int senderPort = 0;
@@ -148,16 +151,29 @@ public class UDP_packet {
 			    		ip = InetAddress.getByName(host.getIp());
 			    	}
 			    }
-				String ack_buf = "r " + IDsender + " " + numberMessage;   //--> r 1 43    (acknowledgement message 43 from process 1)
-				msg = "d " + msg + "\n";   
+				String ack_buf = "r " + IDsender + " " + IDOriginalSender + " " + numberMessage;   //--> r 1 2 43    (acknowledgement message 43 from process 2 on behalf of process 1)
+				msg = "d " + msg.substring(msg.indexOf(" ")+1) + "\n";   
 				//System.out.println("MESSAGGIO RICEVUTO:::: " + str);
 				//NOW SEND BACK THE ACKNOWLEDGEMENT
-			    logger.add(msg);
+				if(IDsender==IDOriginalSender) {
+					logger.add(msg);
+				}
 				DatagramSocket ds1 = new DatagramSocket();
 				DatagramPacket dp1 = new DatagramPacket(ack_buf.getBytes(), ack_buf.length(), ip, senderPort);
-				
 				ds1.send(dp1);
 				ds1.close();
+				
+				//here I broadcast this message to all the other processes
+				for (Host host: parser.hosts()) {
+			    	if(host.getId() != IDsender) {
+						//DatagramSocket ds2 = new DatagramSocket();		//[myID] [IdOriginalSender] [numberMessage]
+						String newMsg = parser.myId() + " " + IDOriginalSender + " " + numberMessage;
+						logger.add_set_missing(IDOriginalSender, parser.myId(), numberMessage);
+						//DatagramPacket dp2 = new DatagramPacket(newMsg.getBytes(), ack_buf.length(), host.getId(), host.getPort());
+			    	}
+			    }
+				
+				
     	    } catch(IOException e) {
     		    e.printStackTrace();
     		}
