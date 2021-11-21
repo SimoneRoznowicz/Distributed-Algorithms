@@ -147,7 +147,7 @@ public class UDP_packet {
         public void run() {
     	    try {
 		    	Scanner s = new Scanner(msg);
-				System.out.println("msg  == " + msg);
+				//System.out.println("msg  == " + msg);
 		    	//System.out.println("msg=== " + msg);
 				int IDsender = s.nextInt();		//id of the last sender
 				int IDOriginalSender = s.nextInt();		//id of the original first sender
@@ -164,7 +164,7 @@ public class UDP_packet {
 				msg = "d " + msg.substring(msg.indexOf(" ")+1) + "\n";  
 
 				if(IDsender != IDOriginalSender) {
-					System.out.println("msg brodcast == " + msg);
+					//System.out.println("msg brodcast == " + msg);
 				}
 				//System.out.println("MESSAGGIO RICEVUTO:::: " + str);
 				//NOW SEND BACK THE ACKNOWLEDGEMENT
