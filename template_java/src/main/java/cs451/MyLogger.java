@@ -17,7 +17,6 @@ import java.util.Collections;
 public class MyLogger {
 	ConcurrentHashMap<String,String> logs = new ConcurrentHashMap<String,String>();
 	ConcurrentHashMap<String,String> logs_ack_set = new ConcurrentHashMap<String,String>(); 
-	//ConcurrentHashMap<String,String> new_logs_ack_set = new ConcurrentHashMap<String,String>();
 	HashSet<String> set_missing = new HashSet<String>();
 	ArrayList<ConcurrentHashMap<String,String>> maps_ack = new ArrayList<ConcurrentHashMap<String,String>>();
 	List<HashSet<String>> sets_missing = Collections.synchronizedList(new ArrayList<HashSet<String>>());
@@ -29,21 +28,15 @@ public class MyLogger {
 	private boolean endd;
 	long start;
 	long end;
+	ArrayList<Integer>[] listd;
 	
 	
 	public MyLogger(Parser parser, int tot_number_messages) {
-        System.out.println("start time " + start);
-		
-		if(sets_missing == null) {
-			System.out.println("SET_MISSING E' NULL");
-		}
 		System.out.println("TOT NUM MESSAGES == " + tot_number_messages);
 		this.parser=parser;
 		this.outputPath=parser.output();
 		this.tot_number_messages=tot_number_messages;
 		hostsNumber = parser.hosts().size();
-		//sets_missing = new ArrayList<HashSet<String>>();
-		//maps_ack = new ArrayList<ConcurrentHashMap<String,String>>();
 		endd=true;
 		for (int i=0; i<hostsNumber; i++) {
 			HashSet<String> set = new HashSet<String>();
@@ -51,7 +44,6 @@ public class MyLogger {
 			maps_ack.add(map);
 			sets_missing.add(set);
 		}
-		System.out.println("dimensione2 " + sets_missing.size());
 		int myId=parser.myId();
 		//initialize set_missing with all the elements to be sent
 		for (int i=0; i<tot_number_messages; i++) {
@@ -59,24 +51,13 @@ public class MyLogger {
 				if(host.getId() != myId) {
 					int b=i+1;		//id di un host che deve mandare il msg, numero del messaggio che deve inviare --> es. 1 43
 					String content=host.getId() + " " + myId + " " + b;
-					//String content=myId + " " + myId + " " + b;
-					//System.out.println("Content!!!!===== " + content);
 					sets_missing.get(parser.myId()-1).add(content);	
 				}
 			}
 		}
-		//System.out.println("Mio set_missing " + sets_missing.get(parser.myId()-1));
 	}
 	
 	synchronized public void add_set_missing(int IDOriginalSender, int myId, int message) {
-		//array of set_missing
-		//arr[OriginalHostId-1] contains set_missing always used: I send my messages to all the other processes.
-		//arr[i-1] contains at the beginning an empty set: every time Ireceive a message from process i, I put the messages here 
-		//(as I need to broadcast every message I receive). At the end, if all processes are correct, I will have an array of i 
-		//elements, each of them containing the same amount of messages
-		//String missing_content=myId + " " + IDOriginalSender + " " + message;
-		//System.out.println("missing_content" + missing_content);
-		//hostId IDOriginalSender message;
 		for (Host host : parser.hosts()) {
 			if(host.getId() != myId) {
 				String missing_content=host.getId() + " " + IDOriginalSender + " " + message;
@@ -87,24 +68,13 @@ public class MyLogger {
 	
 	public void add(String log) {
 		logs.put(log,log);
-		//System.out.println("logs.keyset() ========= \n" + logs.keySet());
 		if(endd==true && logs.keySet().size()==hostsNumber*tot_number_messages) {
-			//System.out.println("logs.keySet().size() == " + logs.keySet().size());.
-	        
 			System.out.println("\n*** RECEIVED ALL MESSAGES ***\n");
-			//end = System.currentTimeMillis();
-			//System.out.println("end time " + end);
-			//float seconds=(end-start)/1000.0f;
-	        
-	        //System.out.println("DELTA TIME: " + (System.currentTimeMillis()-start)/1000.0f);
 			endd=false;
 		}
 	}
 	
 	public void addAck(int IDOriginalSender, String logAck) {
-		//if(!logs_ack_set.contains(logAck)) {
-			//new_logs_ack_set.put(logAck,logAck);
-		//}
 		maps_ack.get(IDOriginalSender-1).put(logAck,logAck);			//1 2 int the receiver, 2 if the process is the sender
 	}
 	public int getSize() {
@@ -112,33 +82,58 @@ public class MyLogger {
 	}
 	
 	public List<HashSet<String>> check() {
-		/*if(valid==7) {
-			valid=0;
-		}
-		else {valid++;}*/
-		//System.out.println("dimensione1 " + sets_missing.get(0).size());
-		//System.out.println("dimensione2 " + sets_missing.get(1).size());
-		//System.out.println("dimensione3 " + sets_missing.get(2).size());
-		//System.out.println("dimensione4 " + sets_missing.get(3).size());
 		for(int i=0; i<sets_missing.size();i++) {
 			Iterator <String> iter = maps_ack.get(i).keySet().iterator();
 		    while (iter.hasNext()) {
 		    	sets_missing.get(i).remove(iter.next());
 		    }
 		}
-	    //new_logs_ack_set.clear();
 		return sets_missing;
 	}
 	
 	public void writeOutput() {
 		System.out.println("*** NUMBER OF LOGS *** == " + logs.size());
+		
+		ArrayList<Integer> listb = new ArrayList<Integer>();
+		listd = new ArrayList[hostsNumber];
+		ArrayList<Integer> arrl = null;
+		for(int i=0;i<listd.length;i++) {
+			listd[i] = new ArrayList<Integer>();
+		}	
+
 		try(BufferedWriter fileWriter = new BufferedWriter(new FileWriter(outputPath))) {
 			Iterator <String> iter = logs.keySet().iterator();
 			while(iter.hasNext()) {
-				fileWriter.write(iter.next());
+				String a = iter.next();
+				if(a.charAt(0)=='b') {
+					int bNum = Integer.valueOf(a.substring(2,a.indexOf('\n')));
+					listb.add(bNum);
+				}
+				else if(a.charAt(0)=='d') {
+					Scanner scan = new Scanner(a.substring(2));
+					String c= a.substring(2);
+					int dFirstNum = Integer.valueOf(c.substring(0,c.indexOf(' ')));
+					int dSecondNum = Integer.valueOf(c.substring(c.indexOf(" ")+1,c.indexOf('\n')));
+					if(listd!=null) {
+						listd[dFirstNum-1].add(dSecondNum);
+					}
+				}
+				else{
+					fileWriter.write(a);
+				}
 			}
-			//System.out.println("*** set_missing == " + set_missing + " ***");
-			//System.out.println("*** logs_ack_set == " + logs_ack_set.keySet() + " ***");	
+			Collections.sort(listb);
+			for(int num : listb) {
+				fileWriter.write("b " + num + "\n");
+			}
+
+			for(int i=0;i<listd.length;i++) {
+				Collections.sort(listd[i]);
+				for(Integer element : listd[i]) {
+					int x=i+1;
+					fileWriter.write("d " + x + " " + element + "\n");
+				}
+			}
 		}
 
 		catch (IOException e) {
