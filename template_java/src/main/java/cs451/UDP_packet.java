@@ -88,12 +88,13 @@ public class UDP_packet {
 	    try {
 			System.out.println("Appena prima di receive");
 			int num_rec_threads1 = 5;
-			int num_rec_threads2 = 220;
+			int num_rec_threads2 = 150;
 			client_handle1 = (ThreadPoolExecutor) Executors.newFixedThreadPool(num_rec_threads1);
 			client_handle2 = (ThreadPoolExecutor) Executors.newFixedThreadPool(num_rec_threads2);
 			while (true) {		//keeps receiving 
 				dsr.receive(dpr);   //should ha 1 4 where 1 is the ID of the process and 4 the number of the message
 			    String msg = new String(dpr.getData(), 0, dpr.getLength());
+				//System.out.println("msg== " + msg);
 			    if(msg.charAt(0)!=('r')) {
 			    	ClientHandler clientSock = new ClientHandler(msg);
 		            client_handle1.execute(clientSock);
@@ -140,6 +141,7 @@ public class UDP_packet {
         public void run() {
     	    try {
 		    	Scanner s = new Scanner(msg);
+		    	//System.out.println("msg=== " + msg);
 				int IDsender = s.nextInt();		//id of the last sender
 				int IDOriginalSender = s.nextInt();		//id of the original first sender
 				int numberMessage = s.nextInt();
@@ -155,7 +157,7 @@ public class UDP_packet {
 				msg = "d " + msg.substring(msg.indexOf(" ")+1) + "\n";   
 				//System.out.println("MESSAGGIO RICEVUTO:::: " + str);
 				//NOW SEND BACK THE ACKNOWLEDGEMENT
-				if(IDsender==IDOriginalSender) {
+				if(IDsender==IDOriginalSender && IDsender!=parser.myId()) {
 					logger.add(msg);
 				}
 				DatagramSocket ds1 = new DatagramSocket();
@@ -163,6 +165,7 @@ public class UDP_packet {
 				ds1.send(dp1);
 				ds1.close();
 				
+
 				//here I broadcast this message to all the other processes
 				for (Host host: parser.hosts()) {
 			    	if(host.getId() != IDsender) {

@@ -67,17 +67,13 @@ public class Process {
 		    		myIp = InetAddress.getByName(host.getIp());
 		    	}
 		    }
-			//receive all ack packets
-			/*ExecutorService executor_rec_ack = Executors.newSingleThreadExecutor();
-			UDP_packet rec_pack_ack = new UDP_packet(myPort, outputPath, list_payloads.size(), logger, myIp, parser);
-			Task_receive task_rec_ack = new Task_receive(rec_pack_ack);
-			executor_rec_ack.execute(task_rec_ack);			
-			*/
+			
 			number_threads_send=1;
 			ThreadPoolExecutor executor_send = (ThreadPoolExecutor) Executors.newFixedThreadPool(number_threads_send);
 			for (int i=0; i<list_payloads.size(); i++) {
 				//System.out.println("listpayloads.get(i) %%%%%% = " + list_payloads.get(i));
 	            Task_send task_send = new Task_send(list_payloads.get(i).getBytes(), ip, port, logger, parser);
+	            //System.out.println("list_payloads(i) " + list_payloads.get(i));
 	            executor_send.execute(task_send);
 	        }
 			//now check the list of messages which seem to be not arrived (until there are no messages left to be sent, keep sending the missing ones)
@@ -96,10 +92,12 @@ public class Process {
 					Iterator iter = sets_missing.iterator(); // Must be in synchronized block
 				    while (iter.hasNext()) {
 						for(String missing_msg : (HashSet<String>)iter.next()) {
-							String content = myID + " " + missing_msg.substring(2);
+							//String content = myID + " " + missing_msg.substring(2);
+							//System.out.println("missing_msg=== " + missing_msg);							
+							//System.out.println("content=== " + content);
 							//System.out.println("content===== " + content);
 							//System.out.println("missing_msg.substring(2)===== " + missing_msg.substring(2));
-							Task_send task_send = new Task_send((myID + " " + missing_msg.substring(2)).getBytes(), ip, port, logger, parser);
+							Task_send task_send = new Task_send((missing_msg).getBytes(), ip, port, logger, parser);
 			            	executor_send.execute(task_send);
 						}
 					}

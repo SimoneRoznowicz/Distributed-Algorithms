@@ -33,8 +33,7 @@ public class MyLogger {
 	
 	public MyLogger(Parser parser, int tot_number_messages) {
         System.out.println("start time " + start);
-
-		System.out.println("dimensione " + sets_missing.size());
+		
 		if(sets_missing == null) {
 			System.out.println("SET_MISSING E' NULL");
 		}
@@ -109,6 +108,10 @@ public class MyLogger {
 			valid=0;
 		}
 		else {valid++;}*/
+		//System.out.println("dimensione1 " + sets_missing.get(0).size());
+		//System.out.println("dimensione2 " + sets_missing.get(1).size());
+		//System.out.println("dimensione3 " + sets_missing.get(2).size());
+		//System.out.println("dimensione4 " + sets_missing.get(3).size());
 		for(int i=0; i<sets_missing.size();i++) {
 			Iterator <String> iter = maps_ack.get(i).keySet().iterator();
 		    while (iter.hasNext()) {
