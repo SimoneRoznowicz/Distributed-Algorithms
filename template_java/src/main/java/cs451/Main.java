@@ -19,9 +19,9 @@ public class Main {
     private static void handleSignal(MyLogger logger) {
         //immediately stop network packet processing
         System.out.println("Immediately stopping network packet processing.");
+        System.out.println("Writing output.");
         logger.writeOutput();
         //write/flush output file if necessary
-        System.out.println("Writing output.");
     }
 
     private static void initSignalHandlers(MyLogger logger) {
@@ -54,7 +54,6 @@ public class Main {
 		
         MyLogger logger = new MyLogger(parser, num_mess_send);
         initSignalHandlers(logger);		
-        //Thread.sleep(2000);
         // example
         long pid = ProcessHandle.current().pid();
         System.out.println("My PID: " + pid + "\n");
@@ -81,7 +80,6 @@ public class Main {
         }
     	System.out.println("*********-------------------");
         for (Host host: parser.hosts()) {
-        	//AVVIA UNA CLASSE ESEGUIBILE CHE INVII TUTTI I MESSAGGI
 			System.out.println("myID == " + myID);
 			System.out.println("host.getId() == " + host.getId()+ "\n\n");
 			if (host.getId() == myID) {
@@ -128,9 +126,6 @@ public class Main {
         System.out.println("Doing some initialization\n");
 
         System.out.println("Broadcasting and delivering messages...\n");
-        long end = System.currentTimeMillis() - start; 
-        float seconds = end / 1000.0f; 
-        System.out.println("DELTA TIME: " + seconds);
 
         System.out.println("FINISHED!!!");
         // After a process finishes broadcasting,

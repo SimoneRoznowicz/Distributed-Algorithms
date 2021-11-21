@@ -135,7 +135,6 @@ public class MyLogger {
 				}
 			}
 		}
-
 		catch (IOException e) {
 			e.printStackTrace();
 		}
