@@ -57,14 +57,20 @@ public class UDP_packet {
 	    DatagramPacket dps = new DatagramPacket(buf, length, ip, port);		//DatagramPacket(byte[] barr, int length, InetAddress address, int port)
 	    try {
 	    	dss.send(dps);  //should ha 1 4 where 1 is the ID of the process and 4 the number of the message
-	    	String str = new String(dps.getData(), 0, dps.getLength()); 
+	    	String str = new String(dps.getData(), 0, dps.getLength());
+	    	
 	    	Scanner scanner= new Scanner(str);
 			int IDsender = scanner.nextInt();
+			int IDOriginalsender = scanner.nextInt();
+			if(IDsender!=IDOriginalsender) {
+				//System.out.println("ora li mando " + str);
+			}
+			//System.out.println("msg mandato da::: " + IDsender + " a port " + port);
 			scanner.nextInt();
 			//System.out.println("str ======= " + str);
 			//if(!scanner.hasNextInt()) {
-				str = "b " + str.substring(4) + "\n";
-		    	logger.add(str);
+			str = "b " + str.substring(4) + "\n";
+	    	logger.add(str);
 			//}
 			//System.out.println("MESSAGGIO INVIATO:::: " + str);
 	    } catch(IOException e) {
@@ -88,7 +94,7 @@ public class UDP_packet {
 	    try {
 			System.out.println("Appena prima di receive");
 			int num_rec_threads1 = 5;
-			int num_rec_threads2 = 150;
+			int num_rec_threads2 = 250;
 			client_handle1 = (ThreadPoolExecutor) Executors.newFixedThreadPool(num_rec_threads1);
 			client_handle2 = (ThreadPoolExecutor) Executors.newFixedThreadPool(num_rec_threads2);
 			while (true) {		//keeps receiving 
@@ -141,6 +147,7 @@ public class UDP_packet {
         public void run() {
     	    try {
 		    	Scanner s = new Scanner(msg);
+				System.out.println("msg  == " + msg);
 		    	//System.out.println("msg=== " + msg);
 				int IDsender = s.nextInt();		//id of the last sender
 				int IDOriginalSender = s.nextInt();		//id of the original first sender
@@ -154,10 +161,19 @@ public class UDP_packet {
 			    	}
 			    }
 				String ack_buf = "r " + IDsender + " " + IDOriginalSender + " " + numberMessage;   //--> r 1 2 43    (acknowledgement message 43 from process 2 on behalf of process 1)
-				msg = "d " + msg.substring(msg.indexOf(" ")+1) + "\n";   
+				msg = "d " + msg.substring(msg.indexOf(" ")+1) + "\n";  
+
+				if(IDsender != IDOriginalSender) {
+					System.out.println("msg brodcast == " + msg);
+				}
 				//System.out.println("MESSAGGIO RICEVUTO:::: " + str);
 				//NOW SEND BACK THE ACKNOWLEDGEMENT
-				if(IDsender==IDOriginalSender && IDsender!=parser.myId()) {
+				//if (IDsender==2) {
+				//System.out.println("arrivato messaggio da :: " + IDsender);
+				//}
+				//System.out.println("IDsender === " + IDsender);
+				if(IDsender!=parser.myId() && IDOriginalSender!=parser.myId()) {
+					//System.out.println("IDsender === " + IDsender + " msg === " + msg);
 					logger.add(msg);
 				}
 				DatagramSocket ds1 = new DatagramSocket();
@@ -170,12 +186,11 @@ public class UDP_packet {
 				for (Host host: parser.hosts()) {
 			    	if(host.getId() != IDsender) {
 						//DatagramSocket ds2 = new DatagramSocket();		//[myID] [IdOriginalSender] [numberMessage]
-						String newMsg = parser.myId() + " " + IDOriginalSender + " " + numberMessage;
+						//String newMsg = parser.myId() + " " + IDOriginalSender + " " + numberMessage;
 						logger.add_set_missing(IDOriginalSender, parser.myId(), numberMessage);
 						//DatagramPacket dp2 = new DatagramPacket(newMsg.getBytes(), ack_buf.length(), host.getId(), host.getPort());
 			    	}
 			    }
-				
 				
     	    } catch(IOException e) {
     		    e.printStackTrace();

@@ -58,23 +58,31 @@ public class MyLogger {
 			for (Host host : parser.hosts()) {
 				if(host.getId() != myId) {
 					int b=i+1;		//id di un host che deve mandare il msg, numero del messaggio che deve inviare --> es. 1 43
-					String content=host.getId() + " " + host.getId() + " " + b;
+					String content=host.getId() + " " + myId + " " + b;
+					//String content=myId + " " + myId + " " + b;
 					//System.out.println("Content!!!!===== " + content);
 					sets_missing.get(parser.myId()-1).add(content);	
 				}
 			}
 		}
+		//System.out.println("Mio set_missing " + sets_missing.get(parser.myId()-1));
 	}
 	
-	public void add_set_missing(int IDOriginalSender, int myId, int message) {
+	synchronized public void add_set_missing(int IDOriginalSender, int myId, int message) {
 		//array of set_missing
 		//arr[OriginalHostId-1] contains set_missing always used: I send my messages to all the other processes.
 		//arr[i-1] contains at the beginning an empty set: every time Ireceive a message from process i, I put the messages here 
 		//(as I need to broadcast every message I receive). At the end, if all processes are correct, I will have an array of i 
 		//elements, each of them containing the same amount of messages
-		String missing_content=myId + " " + IDOriginalSender + " " + message;
+		//String missing_content=myId + " " + IDOriginalSender + " " + message;
 		//System.out.println("missing_content" + missing_content);
-		sets_missing.get(IDOriginalSender-1).add(missing_content);			//es. 2 43 The information IDOriginalSender is indexOf the set in the array + 1
+		//hostId IDOriginalSender message;
+		for (Host host : parser.hosts()) {
+			if(host.getId() != myId) {
+				String missing_content=host.getId() + " " + IDOriginalSender + " " + message;
+				sets_missing.get(IDOriginalSender-1).add(missing_content);			//es. 2 43 The information IDOriginalSender is indexOf the set in the array + 1
+			}
+		}
 	}
 	
 	public void add(String log) {
