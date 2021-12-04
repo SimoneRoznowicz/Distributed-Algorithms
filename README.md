@@ -1,5 +1,5 @@
 # Distributed-Algorithms
-The project was done within the course Distributed Algorithms offered at the School of Computer and Communication Sciences at École polytechnique fédérale de Lausanne (EPFL).
+The project was done within the course Distributed Algorithms offered at the *School of Computer and Communication Sciences* at École polytechnique fédérale de Lausanne (EPFL).
 
 It consists in the development of three deliverables: 
 * ***Prefect Links***   
