@@ -91,7 +91,7 @@ public class UDP_packet {
 			client_handle1 = (ThreadPoolExecutor) Executors.newFixedThreadPool(num_rec_threads1);
 			client_handle2 = (ThreadPoolExecutor) Executors.newFixedThreadPool(num_rec_threads2);
 			while (true) {		//keeps receiving 
-				dsr.receive(dpr);   //should ha 1 4 where 1 is the ID of the process and 4 the number of the message
+				dsr.receive(dpr);		//should ha 1 4 where 1 is the ID of the process and 4 the number of the message
 			    String msg = new String(dpr.getData(), 0, dpr.getLength());
 			    if(msg.charAt(0)!=('r')) {
 			    	ClientHandler clientSock = new ClientHandler(msg);
