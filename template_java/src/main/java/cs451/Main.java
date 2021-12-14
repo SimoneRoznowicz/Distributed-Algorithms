@@ -23,7 +23,10 @@ import java.lang.Thread;
 
 
 public class Main {
-
+/*
+ * problema quando ribroadcasti il messaggio: il vector clock che viene mandato non e' quello del dispositivo originario ma quello dell'ultimo intermediario:
+ * devi cambiare qualcosa quando in process manda con task_send e nel receive() dove ribroadcasti ci devi mettere il vector clock nel messaggio
+ * */
     private static void handleSignal(MyLogger logger) {
         //immediately stop network packet processing
         System.out.println("Immediately stopping network packet processing.");

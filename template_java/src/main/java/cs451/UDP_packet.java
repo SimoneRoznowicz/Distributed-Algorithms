@@ -26,7 +26,6 @@ public class UDP_packet {
 	private MyLogger logger;
 	private String origin;
 	private Parser parser;
-	
 	//received_packet
 	public UDP_packet(int port, String outputPath, int numMessages, MyLogger llogger, InetAddress ip, Parser parser) {
 		this.port=port;
@@ -74,7 +73,15 @@ public class UDP_packet {
 	}
 	
 	public void receive() {
+	    Thread myThread = new Thread(){
+	    	public void run(){
+	    		if(logger.can_log());
+		    }
+	    }
+	    myThread.start();
+	    
 		DatagramSocket dsr = null;
+		
 		try {
 			dsr = new DatagramSocket(port);
 		} catch(SocketException e) {
@@ -138,9 +145,18 @@ public class UDP_packet {
   
         public void run() {
     	    try {
+    	    	int index=0;
+    	    	for(int i=0;i<msg.length();i++) {
+    	    		if(msg.charAt(i)=='|') {
+    	    			index=i;
+    	    		}
+    	    	}
+    	    	String str_clock = msg.substring(0,index);
+    	    	msg=msg.substring(index+1);
 		    	Scanner s = new Scanner(msg);
 				int IDsender = s.nextInt();		//id of the last sender
 				int IDOriginalSender = s.nextInt();		//id of the original first sender
+				logger.update_list_clock(IDOriginalSender);
 				int numberMessage = s.nextInt();
 			    origin = IDsender + "";
 			    int senderPort = 0;
@@ -155,6 +171,7 @@ public class UDP_packet {
 
 
 				if(IDsender!=parser.myId() && IDOriginalSender!=parser.myId()) {
+					//METTICI LE CONDIZIONI PER PASSARE:
 					logger.add(msg);
 				}
 				DatagramSocket ds1 = new DatagramSocket();
@@ -166,7 +183,7 @@ public class UDP_packet {
 				//here I broadcast this message to all the other processes
 				for (Host host: parser.hosts()) {
 			    	if(host.getId() != IDsender) {
-						logger.add_set_missing(IDOriginalSender, parser.myId(), numberMessage);
+						logger.add_set_missing(IDOriginalSender, parser.myId(), numberMessage, str_clock);
 			    	}
 			    }
 				
