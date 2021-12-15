@@ -55,73 +55,7 @@ public class Process {
 	
 	public void sendAll() throws java.net.UnknownHostException {
 		if (myId!=receiverId) {					//This process has to SEND the messages
-			int myPort=0;
-			InetAddress myIp=null;
-			for (Host host: parser.hosts()) {
-		    	if(host.getId() == parser.myId()) {
-		    		myPort = host.getPort();
-		    		myIp = InetAddress.getByName(host.getIp());
-		    	}
-		    }
-			
-			number_threads_send=1;
-			ThreadPoolExecutor executor_send = (ThreadPoolExecutor) Executors.newFixedThreadPool(number_threads_send);
-			//now check the list of messages which seem to be not arrived (until there are no messages left to be sent, keep sending the missing ones)
-			List<ConcurrentHashMap<String,String>> sets_missing=null;
-			sets_missing = logger.check();
-			
-			int myID = parser.myId();
-			while(true) {
-				sets_missing = logger.check();
-				synchronized (sets_missing) {
-					Iterator iter = sets_missing.iterator(); // Must be in synchronized block
-				    while (iter.hasNext()) {
-				    	HashMap<String,String> considered_map = (HashMap<String,String>)iter.next();
-						for(String missing_msg : considered_map.keySet()) { //ho forzato a hashMap anche se sarebbe concurrent hash map
-							boolean isRebroadcast=false;
-							int index=0;
-							for(int i=0;i<missing_msg.length();i++) {
-			    	    		if(missing_msg.charAt(i)=='|') {
-			    	    			index=i;
-			    	    			isRebroadcast=true;
-			    	    			break;
-			    	    		}
-			    	    	}
-							String string_clock=null;
-							if(!isRebroadcast) 
-								string_clock = logger.get_list_clock();
-							else 
-								string_clock = considered_map.get(missing_msg);
-							String content = string_clock + "|" + myID + " " + missing_msg.substring(missing_msg.indexOf(" ")+1); //example  1 2 3|3 message     
-							port=11000+Integer.valueOf(missing_msg.substring(0,missing_msg.indexOf(" ")));
-							Task_send task_send = new Task_send((content).getBytes(), ip, port, logger, parser);
-
-							executor_send.execute(task_send);
-						}
-						
-					}
-				}				
-				try {
-					if(sets_missing.get(parser.myId()-1).size()<300) {
-						Thread.sleep(400);
-					}
-					else if(sets_missing.get(parser.myId()-1).size()<9500) {
-						Thread.sleep(2000);
-					}
-					else if(sets_missing.get(parser.myId()-1).size()<50000){
-						Thread.sleep(4000);
-					}
-					else {
-						Thread.sleep(4000);
-					}
-				} catch (java.lang.InterruptedException e) {
-					e.printStackTrace();
-				}
-				
-			}
-			//HO COMMENTATO LA LINEA SOTTO!!!!!!!!
-	        //executor_send.shutdown();
-	        //executor_rec_ack.shutdown();
+			logger.logger_sender(list_payloads, ip, port, myId, receiverId, outputPath);
 		}
 	}
 }

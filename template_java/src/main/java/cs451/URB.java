@@ -22,6 +22,7 @@ public class URB {
 				Thread thread = new Thread() {
 				    public void run(){
 				    	try {
+				    		System.out.println("SEND IN URB=========================================");
 							Process process = new Process(list_payloads, InetAddress.getByName(host.getIp()), host.getPort(), parser.myId(), host.getId(), parser.output(), logger, parser);
 							process.sendAll();
 				    	} catch(UnknownHostException e) {

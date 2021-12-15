@@ -2,6 +2,7 @@ package cs451;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.List;
 import java.io.FileWriter;
@@ -9,10 +10,13 @@ import java.util.HashSet;
 import java.util.HashSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.Scanner;
 import java.util.Set;
 import java.util.Iterator;
 import java.util.Collections;
+import java.util.HashMap;
 
 
 public class MyLogger {
@@ -39,22 +43,23 @@ public class MyLogger {
 	
 	
 	public MyLogger(Parser parser, List<List<Integer>> list) {
-		System.out.println("TOT NUM MESSAGES == " + tot_number_messages);
 		this.parser=parser;
 		this.outputPath=parser.output();
 		this.list = list;
+		tot_number_messages = list.get(0).get(0);
 		list_clock = list.get(1);
 		hostsNumber = parser.hosts().size();
 		myId=parser.myId();
-		tot_number_messages = list_clock.get(0);
-		System.out.println("TOT NUM MESSAGES == " + tot_number_messages);
+		
+		System.out.println("TOT NUM MESSAGES **********************== " + tot_number_messages);
 		endd=true;
 		
 		for (int i=0; i<hostsNumber; i++) {
 			HashSet<String> set = new HashSet<String>();
-			ConcurrentHashMap<String,String> map = new ConcurrentHashMap<String,String>();
-			maps_ack.add(map);
-			sets_missing.add(map);
+			ConcurrentHashMap<String,String> map1 = new ConcurrentHashMap<String,String>();
+			ConcurrentHashMap<String,String> map2 = new ConcurrentHashMap<String,String>();
+			maps_ack.add(map1);
+			sets_missing.add(map2);
 		}
 
 		//initialize set_missing with all the elements to be sent
@@ -69,12 +74,95 @@ public class MyLogger {
 		}
 	}
 	
+	
+	
+	public void logger_sender(List<String> list_payloads, InetAddress ip, int port, int myId, int receiverId, String outputPath) {
+		int number_threads_send=1;
+		ThreadPoolExecutor executor_send = (ThreadPoolExecutor) Executors.newFixedThreadPool(number_threads_send);
+		//now check the list of messages which seem to be not arrived (until there are no messages left to be sent, keep sending the missing ones)
+		//sets_missing = check();
+
+		int myID = parser.myId();
+		while(true) {
+			check();
+			synchronized (sets_missing) {
+				Iterator iter = sets_missing.iterator(); // Must be in synchronized block
+			    while (iter.hasNext()) {
+			    	//System.out.println("CI SONO 3");
+			    	ConcurrentHashMap<String,String> considered_map = (ConcurrentHashMap<String,String>)iter.next();
+			    	int y=0;
+					int num_mess=4;
+					int count_done_sent=0;
+					String content="";
+					int size_this_set = considered_map.keySet().size();
+					for(String missing_msg : considered_map.keySet()) { //ho forzato a hashMap anche se sarebbe concurrent hash map						
+						boolean isRebroadcast=false;
+						int index=0;
+						for(int i=0;i<missing_msg.length();i++) {
+		    	    		if(missing_msg.charAt(i)=='|') {
+		    	    			index=i;
+		    	    			isRebroadcast=true;
+		    	    			break;
+		    	    		}
+		    	    	}
+						String string_clock=null;
+						if(!isRebroadcast) {
+							string_clock = get_list_clock();
+							//System.out.println("---------------string-clock" + string_clock);
+						}
+						else 
+							string_clock = considered_map.get(missing_msg);
+						//piu' messaggi al colpo
+						//$ separates one message from the other (ONE SPECE BEFORE THE END!)
+						if(content=="")
+							content = string_clock + "|" + myID + " " + missing_msg.substring(missing_msg.indexOf(" ")+1);
+						else
+							content = content + " $" + string_clock + "|" + myID + " " + missing_msg.substring(missing_msg.indexOf(" ")+1); //example  1 2 3|3 message $1 2 3|3 message     
+						if(content.charAt(0)=='$') {
+							//System.out.println("CONTENT     ===========      " + content);
+						}
+						port=11000+Integer.valueOf(missing_msg.substring(0,missing_msg.indexOf(" ")));
+						if(y>=num_mess || count_done_sent>=size_this_set-1) {
+							System.out.println("\nthis set is"+ considered_map.keySet());
+							System.out.println("content I sent is == " + content + " y is " + y + " count_done_sent "+ count_done_sent);
+							y=0;
+							Task_send task_send = new Task_send((content).getBytes(), ip, port, this, parser);			
+							executor_send.execute(task_send);
+							content="";
+						}
+						y++;
+						count_done_sent++;
+					}
+				}
+			}				
+			try {
+				if(sets_missing.get(parser.myId()-1).size()<300) {
+					Thread.sleep(400);
+				}
+				else if(sets_missing.get(parser.myId()-1).size()<9500) {
+					Thread.sleep(2000);
+				}
+				else if(sets_missing.get(parser.myId()-1).size()<50000){
+					Thread.sleep(4000);
+				}
+				else {
+					Thread.sleep(4000);
+				}
+			} catch (java.lang.InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+	
+	
+	
+	
 	public void update_list_clock(int id) {		//the receiver updates the value in a cell everytime a message arrives (id is the id of the sender)
 		list_clock.set(id-1,list_clock.get(id-1)+1);
 	}
-	synchronized void can_log() {
+	synchronized boolean can_log() {
 		List<Integer> list_clock_pending = new ArrayList<Integer>();
-		bool canLog=true;
+		boolean canLog=true;
 		for(int i=0;i<list_clock.size();i++) {
 			//qui total causal broadcast. Se vuoi localized, guarda di confrontare solo l'entri che ti interessa
 			
@@ -103,6 +191,7 @@ public class MyLogger {
 	}
 	
 	synchronized public void add_set_missing(int IDOriginalSender, int myId, int message, String string_clock) {
+		//System.out.println("string_clock " + string_clock);
 		for (Host host : parser.hosts()) {
 			if(host.getId() != myId) {
 				String missing_content=host.getId() + " " + IDOriginalSender + " " + message;
@@ -124,23 +213,25 @@ public class MyLogger {
 	public void addAck(int IDOriginalSender, String logAck) {
 		maps_ack.get(IDOriginalSender-1).put(logAck,logAck);			//1 2 int the receiver, 2 if the process is the sender
 	}
+	
 	public int getSize() {
 		return logs_ack_set.size();
 	}
 	
-	public List<ConcurrentHashMap<String,String>> check() {
+	public void check() {
 		for(int i=0; i<sets_missing.size();i++) {
 			Iterator <String> iter = maps_ack.get(i).keySet().iterator();
 		    while (iter.hasNext()) {
 		    	sets_missing.get(i).remove(iter.next());
 		    }
 		}
-		return sets_missing;
 	}
 	
 	public void writeOutput() {
 		System.out.println("*** NUMBER OF LOGS *** == " + logs.size());
-		
+		System.out.println("\n*** maps_ack*** == " + maps_ack);
+		System.out.println("\n*** sets_missing*** == " + sets_missing);
+
 		ArrayList<Integer> listb = new ArrayList<Integer>();
 		listd = new ArrayList[hostsNumber];
 		ArrayList<Integer> arrl = null;

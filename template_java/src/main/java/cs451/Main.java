@@ -93,6 +93,8 @@ public class Main {
 		//so I have just 2 two inner arrayLists: the first contains just the number of messages, 
 		//the second contains the vector clock
 		int num_mess_send = list.get(0).get(0);
+        System.out.println("num_mess_send=========================== " +num_mess_send);
+
 		int myID = parser.myId();
 		
         MyLogger logger = new MyLogger(parser, list);
@@ -125,6 +127,7 @@ public class Main {
 		
     	
     	URB urb = new URB(parser, list_payloads, logger);
+    	System.out.println("CREATO URB!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!");
 		Thread thread1 = new Thread() {
 		    public void run(){
 		    	urb.receive();
