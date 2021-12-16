@@ -67,11 +67,12 @@ public class MyLogger {
 			for (Host host : parser.hosts()) {
 				if(host.getId() != myId) {
 					int b=i+1;		//id di un host che deve mandare il msg, numero del messaggio che deve inviare --> es. 1 43
-					String content=host.getId() + " " + myId + " " + b;
+					String content=host.getId() + " " + myId + " " + b;  //il tipo a cui mando il messaggio, il mio nome cosi' si sa che ho mandato io e il numero del messaggio
 					sets_missing.get(parser.myId()-1).put(content,"");	
 				}
 			}
 		}
+		System.out.println("THIS IS THE INITIAL SETS_MISSING: \n" + sets_missing + "\n\n");
 	}
 	
 	
@@ -86,53 +87,99 @@ public class MyLogger {
 		while(true) {
 			check();
 			synchronized (sets_missing) {
-				Iterator iter = sets_missing.iterator(); // Must be in synchronized block
-			    while (iter.hasNext()) {
+				for(int j=0;j<sets_missing.size();j++) {
 			    	//System.out.println("CI SONO 3");
-			    	ConcurrentHashMap<String,String> considered_map = (ConcurrentHashMap<String,String>)iter.next();
+			    	ConcurrentHashMap<String,String> considered_map = (ConcurrentHashMap<String,String>)sets_missing.get(j);
 			    	int y=0;
-					int num_mess=4;
+					int num_mess=1;
 					int count_done_sent=0;
 					String content="";
+					boolean isFirst=true;
+					port=-1;
 					int size_this_set = considered_map.keySet().size();
-					for(String missing_msg : considered_map.keySet()) { //ho forzato a hashMap anche se sarebbe concurrent hash map						
-						boolean isRebroadcast=false;
-						int index=0;
-						for(int i=0;i<missing_msg.length();i++) {
-		    	    		if(missing_msg.charAt(i)=='|') {
-		    	    			index=i;
-		    	    			isRebroadcast=true;
-		    	    			break;
-		    	    		}
-		    	    	}
-						String string_clock=null;
-						if(!isRebroadcast) {
-							string_clock = get_list_clock();
-							//System.out.println("---------------string-clock" + string_clock);
+					int num_really_sent_thisset=0;
+					boolean redo=true;
+					//while(redo==true) {
+						//isFirst=true;
+						for(String missing_msg : considered_map.keySet()) { //ho forzato a hashMap anche se sarebbe concurrent hash map						
+							
+							boolean isRebroadcast=false;
+							int index=0;
+							for(int i=0;i<missing_msg.length();i++) {
+			    	    		if(missing_msg.charAt(i)=='|') {
+			    	    			index=i;
+			    	    			isRebroadcast=true;
+			    	    			isFirst=true;
+			    	    			break;
+			    	    		}
+			    	    	}
+							if(isFirst==true) {
+								int possibleport=11000+Integer.valueOf(missing_msg.substring(0,missing_msg.indexOf(" ")));
+								System.out.println("Porta precedente == " + port + "  Possibile porta ora == " + possibleport);
+	
+								if(possibleport==port) {
+									System.out.println("Si uguale quindi esco");
+									count_done_sent++;
+									continue;
+								}
+								
+								port=possibleport;
+								isFirst=false;
+							}
+							/*if(port!=11000+Integer.valueOf(missing_msg.substring(0,missing_msg.indexOf(" ")))) {
+								count_done_sent++;
+								System.out.println("Si uguale quindi esco");
+								continue;
+							}*/
+							String string_clock=null;
+							if(!isRebroadcast) {
+								string_clock = get_list_clock();
+								//System.out.println("---------------string-clock" + string_clock);
+							}
+							else 
+								string_clock = considered_map.get(missing_msg);
+							//piu' messaggi al colpo
+							//$ separates one message from the other (ONE SPECE BEFORE THE END!)
+							if(content=="")
+								content = string_clock + "|" + myID + " " + missing_msg.substring(missing_msg.indexOf(" ")+1);
+							else
+								content = content + " $" + string_clock + "|" + myID + " " + missing_msg.substring(missing_msg.indexOf(" ")+1); //example  1 2 3|3 message $1 2 3|3 message     
+							if(content.charAt(0)=='$') {
+								//System.out.println("CONTENT     ===========      " + content);
+							}
+							y++;
+							count_done_sent++;
+							num_really_sent_thisset++;
+							System.out.println("num_really_sent_thisset " + num_really_sent_thisset + ", invece count_done_sent " + count_done_sent + ", invece size_this_set " + size_this_set);
+							if(num_really_sent_thisset>=size_this_set) {
+								System.out.println("REDO FALSE ESCO DAL WHILE");
+								redo=false;
+							}
+							//port=11000+Integer.valueOf(missing_msg.substring(0,missing_msg.indexOf(" ")));
+							if(myID==2 && port==11001) {
+								System.out.println("X SONO P2 E STO MANDANDO UN MESSAGGIO A P1");
+								if(y>=num_mess || count_done_sent>=size_this_set) {
+									System.out.println("X SONO P2 E STO MANDANDO UN MESSAGGIO A P1 E ORA DOVREI MANDARE");
+								}
+							}
+							int w=j+1;
+							//OCCHIO SE VUOI RIPROVARE CON TANTE DEVI TOGLIERE LA RIGA SOTTO
+							port=11000+Integer.valueOf(missing_msg.substring(0,missing_msg.indexOf(" ")));
+							System.out.println("PORTA::::: " + port + ", SONO NEL SET DEL PROCESSO" + w);
+							if(y>=num_mess || count_done_sent>=size_this_set-1) {
+								
+								System.out.println("\nthis set is"+ considered_map.keySet());
+								System.out.println("content I sent is == " + content + " y is " + y + " count_done_sent "+ count_done_sent);
+								y=0;
+								if(myID==2 && port==11001) {
+									System.out.println("Y SONO P2 E STO MANDANDO UN MESSAGGIO A P1");
+								}
+								Task_send task_send = new Task_send((content).getBytes(), ip, port, this, parser);			
+								executor_send.execute(task_send);
+								content="";
+							}
 						}
-						else 
-							string_clock = considered_map.get(missing_msg);
-						//piu' messaggi al colpo
-						//$ separates one message from the other (ONE SPECE BEFORE THE END!)
-						if(content=="")
-							content = string_clock + "|" + myID + " " + missing_msg.substring(missing_msg.indexOf(" ")+1);
-						else
-							content = content + " $" + string_clock + "|" + myID + " " + missing_msg.substring(missing_msg.indexOf(" ")+1); //example  1 2 3|3 message $1 2 3|3 message     
-						if(content.charAt(0)=='$') {
-							//System.out.println("CONTENT     ===========      " + content);
-						}
-						port=11000+Integer.valueOf(missing_msg.substring(0,missing_msg.indexOf(" ")));
-						if(y>=num_mess || count_done_sent>=size_this_set-1) {
-							System.out.println("\nthis set is"+ considered_map.keySet());
-							System.out.println("content I sent is == " + content + " y is " + y + " count_done_sent "+ count_done_sent);
-							y=0;
-							Task_send task_send = new Task_send((content).getBytes(), ip, port, this, parser);			
-							executor_send.execute(task_send);
-							content="";
-						}
-						y++;
-						count_done_sent++;
-					}
+					//}
 				}
 			}				
 			try {

@@ -217,6 +217,7 @@ public class UDP_packet {
     	    	while(iteration<(count$+1)) {
 	    	    	//ci sono count$+1 messaggi
     	    		msg=orig_modif_msg;
+    	    		System.out.println("RECEIVED MESSAGE at the moment is " + msg);
     	    		//System.out.println("MSG receiver packet == " + msg);
 	    	    	int index=-1;
 	    	    	int index$=-1;
@@ -243,7 +244,7 @@ public class UDP_packet {
 				    	}
 				    }
 					String ack_buf = "r " + IDsender + " " + IDOriginalSender + " " + numberMessage;   //--> r 1 2 43    (acknowledgement message 43 from process 2 on behalf of process 1)
-					index$=0;
+					index$=-1;
 					for(int i=0;i<msg.length();i++) {
 	    	    		if(msg.charAt(i)=='$') {
 	    	    			index$=i;
@@ -252,9 +253,8 @@ public class UDP_packet {
 	    	    	}
 					//String msg_log = "d " + msg.substring(msg.indexOf(" ")+1,index$) + "\n";  
 					String msg_log=null;
-					if(index$==0) {
+					if(index$==-1) {
 						msg_log = "d " + msg.substring(msg.indexOf(" ")+1) + "\n";  
-					//	System.out.println("msg_log 1 |||||||||== "+ msg_log.length());
 					}
 					else {
 						msg_log = "d " + msg.substring(msg.indexOf(" ")+1,index$-1) + "\n";  
@@ -262,6 +262,9 @@ public class UDP_packet {
 					}
 					if(IDsender!=parser.myId() && IDOriginalSender!=parser.myId()) {
 						//METTICI LE CONDIZIONI PER PASSARE:
+						if(index$==-1) {
+							System.out.println("msg_log 1 |||||||||== "+ msg_log);
+						}
 						logger.add(msg_log);
 					}
 					
