@@ -56,43 +56,52 @@ public class Main {
         	e.printStackTrace();
         }
         Scanner scanner = new Scanner(file);
-    	List<List<Integer>> list = Collections.synchronizedList(new ArrayList<List<Integer>>(2));
-    	List<Integer> newList = new ArrayList<Integer>(1);
-    	list.add(newList);
+    	List<List<Integer>> list = Collections.synchronizedList(new ArrayList<List<Integer>>(parser.hosts().size()+1));
+    	//List<Integer> newList = new ArrayList<Integer>(parser.hosts().size());
+    	for(int i=0;i<parser.hosts().size()+1;i++) {
+        	List<Integer> newList = new ArrayList<Integer>(parser.hosts().size());
+        	list.add(newList);
+    	}
+    	
+    	/*list.add(newList);
     	Integer[] integers = new Integer[parser.hosts().size()];
     	Arrays.fill(integers, -1);
     	newList = Arrays.asList(integers);
     	//newList = new ArrayList<Integer>(integers);
     	list.add(newList);
     	//System.out.println("list ========= ", list);
-
+    	*/
+    	System.out.println("list_dependencies == " + list + " list size == " + list.size());
     	
 		try (BufferedReader br = new BufferedReader(new FileReader(parser.config()))) {
 		    String line;
 		    boolean isFirst=true;
+		    int jj=0;
 		    while ((line = br.readLine()) != null) {
 		    	if(isFirst) {
 			    	scanner = new Scanner(line);
 			    	list.get(0).add(scanner.nextInt());	//add num_messages 
 			    	isFirst=false;
 		    	}
-		    	scanner = new Scanner(line);
-		    	int idFile=scanner.nextInt();
-		    	if(idFile==parser.myId()) {
-		    		int i=0;
+		    	else {
+			    	int i=0;
+			    	scanner = new Scanner(line);
 			    	while (scanner.hasNextInt()) {
-			    		list.get(1).set(scanner.nextInt(), 0);
+			    		list.get(jj).add(scanner.nextInt());
 			    		i++;
 			    	}
-			    	break;
-		    	}	
+		    	}
+			    jj++;
 		    }
 		}catch(java.io.IOException e) {
 			e.printStackTrace();
 		}
+    	System.out.println("list_dependencies FINALE\n\n == " + list + " list size == " + list.size());
+
 		//so I have just 2 two inner arrayLists: the first contains just the number of messages, 
-		//the second contains the vector clock
+		//the second contains the vector *
 		int num_mess_send = list.get(0).get(0);
+		System.out.println("list dependencies config == \n" + list);
         System.out.println("num_mess_send=========================== " +num_mess_send);
 
 		int myID = parser.myId();

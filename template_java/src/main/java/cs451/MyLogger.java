@@ -1,5 +1,12 @@
 package cs451;
 
+/*4 localhost 11004
+5 localhost 11005
+6 localhost 11006
+7 localhost 11007
+8 localhost 11008
+9 localhost 11009
+*/
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.net.InetAddress;
@@ -25,7 +32,7 @@ public class MyLogger {
 	HashSet<String> set_missing = new HashSet<String>();
 	ArrayList<ConcurrentHashMap<String,String>> maps_ack = new ArrayList<ConcurrentHashMap<String,String>>();
 	List<ConcurrentHashMap<String,String>> sets_missing = Collections.synchronizedList(new ArrayList<ConcurrentHashMap<String,String>>());
-	List<Integer> list_clock;
+	List<Integer> my_list_clock = Collections.synchronizedList(new ArrayList<Integer>());;
 	List<List<Integer>> list;
 	ConcurrentLinkedQueue<Integer> queue= new ConcurrentLinkedQueue<Integer>();
 	
@@ -46,10 +53,25 @@ public class MyLogger {
 		this.parser=parser;
 		this.outputPath=parser.output();
 		this.list = list;
-		tot_number_messages = list.get(0).get(0);
-		list_clock = list.get(1);
 		hostsNumber = parser.hosts().size();
 		myId=parser.myId();
+		tot_number_messages = list.get(0).get(0);
+		list.get(myId);
+		for(int i=1;i<=hostsNumber;i++) {
+			if(list.get(myId).contains(i)) {
+				my_list_clock.add(0);
+			}
+			else {
+				my_list_clock.add(-1);
+			}
+		}
+		System.out.println("my_list_clock========================= " + my_list_clock);
+		
+		/*
+		 * guarda, se sono host 1 allora guardo list.get(1)
+		 * Poi, 
+		 * 
+		 * */
 		
 		System.out.println("TOT NUM MESSAGES **********************== " + tot_number_messages);
 		endd=true;
@@ -115,10 +137,10 @@ public class MyLogger {
 			    	    	}
 							if(isFirst==true) {
 								int possibleport=11000+Integer.valueOf(missing_msg.substring(0,missing_msg.indexOf(" ")));
-								System.out.println("Porta precedente == " + port + "  Possibile porta ora == " + possibleport);
+								//System.out.println("Porta precedente == " + port + "  Possibile porta ora == " + possibleport);
 	
 								if(possibleport==port) {
-									System.out.println("Si uguale quindi esco");
+									//System.out.println("Si uguale quindi esco");
 									count_done_sent++;
 									continue;
 								}
@@ -150,29 +172,29 @@ public class MyLogger {
 							y++;
 							count_done_sent++;
 							num_really_sent_thisset++;
-							System.out.println("num_really_sent_thisset " + num_really_sent_thisset + ", invece count_done_sent " + count_done_sent + ", invece size_this_set " + size_this_set);
+							//System.out.println("num_really_sent_thisset " + num_really_sent_thisset + ", invece count_done_sent " + count_done_sent + ", invece size_this_set " + size_this_set);
 							if(num_really_sent_thisset>=size_this_set) {
-								System.out.println("REDO FALSE ESCO DAL WHILE");
+								//System.out.println("REDO FALSE ESCO DAL WHILE");
 								redo=false;
 							}
 							//port=11000+Integer.valueOf(missing_msg.substring(0,missing_msg.indexOf(" ")));
 							if(myID==2 && port==11001) {
-								System.out.println("X SONO P2 E STO MANDANDO UN MESSAGGIO A P1");
+								//System.out.println("X SONO P2 E STO MANDANDO UN MESSAGGIO A P1");
 								if(y>=num_mess || count_done_sent>=size_this_set) {
-									System.out.println("X SONO P2 E STO MANDANDO UN MESSAGGIO A P1 E ORA DOVREI MANDARE");
+									//System.out.println("X SONO P2 E STO MANDANDO UN MESSAGGIO A P1 E ORA DOVREI MANDARE");
 								}
 							}
 							int w=j+1;
 							//OCCHIO SE VUOI RIPROVARE CON TANTE DEVI TOGLIERE LA RIGA SOTTO
 							port=11000+Integer.valueOf(missing_msg.substring(0,missing_msg.indexOf(" ")));
-							System.out.println("PORTA::::: " + port + ", SONO NEL SET DEL PROCESSO" + w);
+							//System.out.println("PORTA::::: " + port + ", SONO NEL SET DEL PROCESSO" + w);
 							if(y>=num_mess || count_done_sent>=size_this_set-1) {
 								
-								System.out.println("\nthis set is"+ considered_map.keySet());
-								System.out.println("content I sent is == " + content + " y is " + y + " count_done_sent "+ count_done_sent);
+								//System.out.println("\nthis set is"+ considered_map.keySet());
+								//System.out.println("content I sent is == " + content + " y is " + y + " count_done_sent "+ count_done_sent);
 								y=0;
 								if(myID==2 && port==11001) {
-									System.out.println("Y SONO P2 E STO MANDANDO UN MESSAGGIO A P1");
+									//System.out.println("Y SONO P2 E STO MANDANDO UN MESSAGGIO A P1");
 								}
 								Task_send task_send = new Task_send((content).getBytes(), ip, port, this, parser);			
 								executor_send.execute(task_send);
@@ -205,17 +227,17 @@ public class MyLogger {
 	
 	
 	public void update_list_clock(int id) {		//the receiver updates the value in a cell everytime a message arrives (id is the id of the sender)
-		list_clock.set(id-1,list_clock.get(id-1)+1);
+		my_list_clock.set(id-1,my_list_clock.get(id-1)+1);
 	}
 	synchronized boolean can_log() {
 		List<Integer> list_clock_pending = new ArrayList<Integer>();
 		boolean canLog=true;
-		for(int i=0;i<list_clock.size();i++) {
+		for(int i=0;i<my_list_clock.size();i++) {
 			//qui total causal broadcast. Se vuoi localized, guarda di confrontare solo l'entri che ti interessa
 			
 			//ottieni id di chi ti manda il messaggio
 			//guarda da chi dipende quel process
-			if(list_clock.get(i)<=list_clock_pending.get(i)) {
+			if(my_list_clock.get(i)<=list_clock_pending.get(i)) {
 				canLog=false;
 				break;
 			}
@@ -225,7 +247,7 @@ public class MyLogger {
 	
 	public String get_list_clock(){
 		//puoi semplificare con unsemplice for che stampa tutti gli elementi in una stringa separati da uno spazio0
-		String a = list_clock.toString();
+		String a = my_list_clock.toString();
 		a = a.substring(1,a.length()-1);
 		StringBuilder str = new StringBuilder(a);
 		for(int i=0;i<str.length();i++) {
@@ -242,9 +264,23 @@ public class MyLogger {
 		for (Host host : parser.hosts()) {
 			if(host.getId() != myId) {
 				String missing_content=host.getId() + " " + IDOriginalSender + " " + message;
-				if(!sets_missing.get(IDOriginalSender-1).containsKey(missing_content)) {
-					sets_missing.get(IDOriginalSender-1).put(missing_content,string_clock);			//es. 2 43 The information IDOriginalSender is indexOf the set in the array + 1
+				
+				int jj=0;
+				boolean ret=true;
+				while(jj<maps_ack.size()) {
+					if( maps_ack.get(jj).containsKey((Object)missing_content)) {
+						if(missing_content.equals("3 2 4")) {
+							System.out.println("RIPETOOOO e IDOriginalSender == " + IDOriginalSender);
+						}
+						return;
+					}
+					jj++;
 				}
+				sets_missing.get(IDOriginalSender-1).put(missing_content,string_clock);			//es. 2 43 The information IDOriginalSender is indexOf the set in the array + 1
+				
+				/*if(!sets_missing.get(IDOriginalSender-1).containsKey(missing_content) && (!maps_ack.get(IDOriginalSender-1).containsKey((Object)missing_content))) {
+					sets_missing.get(IDOriginalSender-1).put(missing_content,string_clock);			//es. 2 43 The information IDOriginalSender is indexOf the set in the array + 1
+				}*/
 			}
 		}
 	}
@@ -258,7 +294,7 @@ public class MyLogger {
 	}
 	
 	public void addAck(int IDOriginalSender, String logAck) {
-		maps_ack.get(IDOriginalSender-1).put(logAck,logAck);			//1 2 int the receiver, 2 if the process is the sender
+		maps_ack.get(IDOriginalSender-1).put(logAck,"");			//1 2 int the receiver, 2 if the process is the sender
 	}
 	
 	public int getSize() {
@@ -267,9 +303,16 @@ public class MyLogger {
 	
 	public void check() {
 		for(int i=0; i<sets_missing.size();i++) {
-			Iterator <String> iter = maps_ack.get(i).keySet().iterator();
+			Iterator iter = maps_ack.get(i).keySet().iterator();
 		    while (iter.hasNext()) {
-		    	sets_missing.get(i).remove(iter.next());
+		    	String aa=(String)iter.next();
+	    		System.out.println("messaggio da check " + aa);
+				for(int y=0; y<sets_missing.size();y++) {
+		    		if(null!=sets_missing.get(y).get((Object)aa)){
+			    		System.out.println("Ora leggo il valore alla Key data " + sets_missing.get(y).get((Object)aa));
+			    		System.out.println("Ora RIMUOVO il valore alla Key data " + sets_missing.get(y).remove((Object)aa));
+		    		}
+				}
 		    }
 		}
 	}

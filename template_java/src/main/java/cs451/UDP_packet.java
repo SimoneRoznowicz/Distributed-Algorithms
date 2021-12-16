@@ -190,8 +190,12 @@ public class UDP_packet {
 			//System.out.println("ACK MESSAGE ===== " + msg);
 			int IDsender = s.nextInt();
 			int IDOriginalSender = s.nextInt();
-			
-        	logger.addAck(IDOriginalSender, msg.substring(msg.indexOf(" ")+1));
+			int num_mess=s.nextInt();
+			for(int j=1;j<=parser.hosts().size();j++) {
+				msg=IDOriginalSender+ " " + j + " " + num_mess;
+	        	logger.addAck(IDOriginalSender, msg);
+			}
+        	//logger.addAck(IDOriginalSender, msg);
         }
 	}
 	
@@ -217,7 +221,7 @@ public class UDP_packet {
     	    	while(iteration<(count$+1)) {
 	    	    	//ci sono count$+1 messaggi
     	    		msg=orig_modif_msg;
-    	    		System.out.println("RECEIVED MESSAGE at the moment is " + msg);
+    	    		//System.out.println("RECEIVED MESSAGE at the moment is " + msg);
     	    		//System.out.println("MSG receiver packet == " + msg);
 	    	    	int index=-1;
 	    	    	int index$=-1;
@@ -263,7 +267,7 @@ public class UDP_packet {
 					if(IDsender!=parser.myId() && IDOriginalSender!=parser.myId()) {
 						//METTICI LE CONDIZIONI PER PASSARE:
 						if(index$==-1) {
-							System.out.println("msg_log 1 |||||||||== "+ msg_log);
+							//System.out.println("msg_log 1 |||||||||== "+ msg_log);
 						}
 						logger.add(msg_log);
 					}
@@ -277,6 +281,7 @@ public class UDP_packet {
 					//here I broadcast this message to all the other processes
 					for (Host host: parser.hosts()) {
 				    	if(host.getId() != IDsender) {
+				    		//dovrei aggiungere solo se non ho ack
 							logger.add_set_missing(IDOriginalSender, parser.myId(), numberMessage, str_clock);
 				    	}
 				    }
