@@ -253,7 +253,7 @@ public class MyLogger {
 			}
 		}
 		
-		System.out.println("my_list_clock == " + my_list_clock + ",       list_clock_pending == " + list_clock_pending + ",       msg_log == " + msg_log + ",       my_list_clock.get(senderIdVal-1)== " + my_list_clock.get(senderIdVal-1));
+		//System.out.println("my_list_clock == " + my_list_clock + ",       list_clock_pending == " + list_clock_pending + ",       msg_log == " + msg_log + ",       my_list_clock.get(senderIdVal-1)== " + my_list_clock.get(senderIdVal-1));
 		/*if(my_list_clock.get(senderIdVal-1)!=(list_clock_pending.get(senderIdVal-1)+1)) {
 			canLog=false;
 		}*/
@@ -309,13 +309,26 @@ public class MyLogger {
 	
 	public void store_log(String msg_log, String str_clock) {
 		map_store_log.put(msg_log,str_clock);
+		/*if(msg_log.charAt(0)=='b')
+			return;
+		String senderId=msg_log.substring(2);
+		int senderIdVal=Integer.valueOf(senderId.substring(0,senderId.indexOf(" ")));
+		for(String msg : map_store_log.keySet()) {
+			if(msg.charAt(0)=='b')
+				continue;
+			String senderIdInside=msg_log.substring(2);
+			int senderIdValInside=Integer.valueOf(senderId.substring(0,senderId.indexOf(" ")));
+			//if(senderIdVal==senderIdValInside) {	
+				map_store_log.put(msg,str_clock);
+			//}
+		}*/
 	}
 
 	public void check_log() throws java.lang.InterruptedException {
-		System.out.println("dentro check log");
+		//System.out.println("dentro check log");
 		while(true) {
 			int i=0;
-			while(true) {
+			while(i<tot_number_messages) {
 				int val=broadcast+1;
 				String temp = "b " + val +"\n";
 				if(map_store_log.containsKey(temp)) {
@@ -323,21 +336,35 @@ public class MyLogger {
 					//System.out.println("AGGIUNTO IN CHECK_LOG() con broadcast == " + broadcast);
 				}
 				else {
-					break;
+					//break;
 				}
 				i++;
 			}
 			
-			for(int k=0;k<my_list_clock.size();k++) {
-				while(true) {
-					int numPossibleMessage = my_list_clock.get(k)+1;
+			for(int k=1;k<=my_list_clock.size();k++) {
+				for(int numPossibleMessage=1; numPossibleMessage<=tot_number_messages; numPossibleMessage++) {
 					String temp = "d " + k + " " + numPossibleMessage +"\n";	//d originalSender numMessage
-					if(map_store_log.containsKey(temp) && can_log(get_list_sender_clock(map_store_log.get(temp)),temp)) {
-						add(temp);
-						System.out.println("AGGIUNTO IN CHECK_LOG() " + temp);
+					//temp="d 1 10\n";
+					if(map_store_log.get((Object)temp)!=null) {
+						//System.out.println("sono entrato");
+
+						if(can_log(get_list_sender_clock(map_store_log.get((Object)temp)),temp)) {
+							add(temp);
+							//logger.can_log(logger.get_list_sender_clock(str_clock),msg_log)==true
+							//System.out.println("AGGIUNTO IN CHECK_LOG() " + temp);
+						}
+						else {
+							
+						}
 					}
 					else {
-						break;
+						//System.out.println("temp " + temp + " e k == " + k + " e numPossibleMessage == "+ numPossibleMessage);
+						//System.out.println("map_store_log " + map_store_log);
+						
+						
+						//System.out.println("temp " + temp);
+						//System.out.println("map_store_log " + map_store_log);
+						//System.out.println("ANCORA NULL");
 					}
 				}
 			}
@@ -453,9 +480,11 @@ public class MyLogger {
 	}
 	
 	public void writeOutput() {
-		System.out.println("in CHECK_LOG size di map_store_log == " + map_store_log);
-		System.out.println("*** maps_ack *** == " + maps_ack);
-		System.out.println("*** sets_missing *** == " + sets_missing);
+		//System.out.println("in CHECK_LOG size di map_store_log == " + map_store_log);
+		//System.out.println("*** maps_ack *** == " + maps_ack);
+		//System.out.println("*** sets_missing *** == " + sets_missing);
+		System.out.println("*** NUMBER OF LOGS *** == " + logs.size());
+
 		
 
 		try(BufferedWriter fileWriter = new BufferedWriter(new FileWriter(outputPath))) {

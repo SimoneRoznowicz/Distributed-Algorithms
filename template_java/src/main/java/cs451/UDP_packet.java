@@ -260,8 +260,8 @@ public class UDP_packet {
 				    		ip = InetAddress.getByName(host.getIp());
 				    	}
 				    }
-					String ack_buf = "r " + IDsender + " " + IDOriginalSender + " " + numberMessage;   //--> r 1 2 43    (acknowledgement message 43 from process 2 on behalf of process 1)
-					System.out.println("ACKNOWLEDGEMENT MESSAGE SENT: " + ack_buf);
+					String ack_buf = "r " + IDsender + " " + parser.myId() + " " + numberMessage;   //--> r 1 2 43    (acknowledgement message 43 from process 2 on behalf of process 1)
+					//System.out.println("ACKNOWLEDGEMENT MESSAGE SENT: " + ack_buf);
 					index$=-1;
 					for(int i=0;i<msg.length();i++) {
 	    	    		if(msg.charAt(i)=='$') {
@@ -294,7 +294,7 @@ public class UDP_packet {
 					}
 					
 					DatagramSocket ds1 = new DatagramSocket();
-					System.out.println("sender port sent ack === " + senderPort);
+					//System.out.println("sender port sent ack === " + senderPort);
 					DatagramPacket dp1 = new DatagramPacket(ack_buf.getBytes(), ack_buf.length(), ip, senderPort);
 					ds1.send(dp1);
 					ds1.close();
