@@ -294,6 +294,20 @@ public class MyLogger {
 				}
 				i++;
 			}
+			/*for(int k=0;k<my_list_clock.size();k++) {
+				while(true) {
+					int numPossibleMessage = my_list_clock.get(k)+1;
+					String temp = "d " + k + " " + numPossibleMessage +"\n";	//d originalSender numMessage
+					if(map_store_log.containsKey(temp)) {
+						add(temp);
+						System.out.println("AGGIUNTO IN CHECK_LOG() con delivery == ");
+					}
+					else {
+						break;
+					}
+				}
+			}*/
+			
 			for(String stored_log : map_store_log.keySet()) {
 				if(stored_log.charAt(0)=='b') {
 					continue;
@@ -403,8 +417,13 @@ public class MyLogger {
 			while(iter.hasNext()) {
 				fileWriter.write(iter.next());
 			}*/
+			String temp="";
 			while(!log_queue.isEmpty()) {
-				fileWriter.write(log_queue.poll());
+				String message=log_queue.poll();
+				if(temp.equals(message))
+					continue;
+				temp=message;
+				fileWriter.write(message);
 			}
 		}
 		catch (IOException e) {
