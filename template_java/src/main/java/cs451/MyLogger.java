@@ -32,10 +32,10 @@ public class MyLogger {
 	HashSet<String> set_missing = new HashSet<String>();
 	ArrayList<ConcurrentHashMap<String,String>> maps_ack = new ArrayList<ConcurrentHashMap<String,String>>();
 	List<ConcurrentHashMap<String,String>> sets_missing = Collections.synchronizedList(new ArrayList<ConcurrentHashMap<String,String>>());
-	List<Integer> my_list_clock = Collections.synchronizedList(new ArrayList<Integer>());;
+	List<Integer> my_list_clock = Collections.synchronizedList(new ArrayList<Integer>());
 	List<List<Integer>> list;
-	ConcurrentLinkedQueue<Integer> queue= new ConcurrentLinkedQueue<Integer>();
-	
+	ConcurrentHashMap<String,String> map_store_log = new ConcurrentHashMap<String,String>(); 
+
 	private Parser parser;
 	private String outputPath;
 	private int hostsNumber;
@@ -62,7 +62,7 @@ public class MyLogger {
 				my_list_clock.add(0);
 			}
 			else {
-				my_list_clock.add(-1);
+				my_list_clock.add(0);		//era -1
 			}
 		}
 		System.out.println("my_list_clock========================= " + my_list_clock);
@@ -155,7 +155,7 @@ public class MyLogger {
 							}*/
 							String string_clock=null;
 							if(!isRebroadcast) {
-								string_clock = get_list_clock();
+								string_clock = get_string_my_clock();
 								//System.out.println("---------------string-clock" + string_clock);
 							}
 							else 
@@ -229,15 +229,15 @@ public class MyLogger {
 	public void update_list_clock(int id) {		//the receiver updates the value in a cell everytime a message arrives (id is the id of the sender)
 		my_list_clock.set(id-1,my_list_clock.get(id-1)+1);
 	}
-	synchronized boolean can_log() {
-		List<Integer> list_clock_pending = new ArrayList<Integer>();
+	
+	synchronized boolean can_log(List<Integer> list_clock_pending, int senderId) {
 		boolean canLog=true;
-		for(int i=0;i<my_list_clock.size();i++) {
+		for(int i=1;i<list.get(senderId).size();i++) { //da uno perche' il primo numero indica ID, il secondo indica le dependencies
 			//qui total causal broadcast. Se vuoi localized, guarda di confrontare solo l'entri che ti interessa
-			
 			//ottieni id di chi ti manda il messaggio
 			//guarda da chi dipende quel process
-			if(my_list_clock.get(i)<=list_clock_pending.get(i)) {
+			int pos=list.get(senderId).get(i)-1;
+			if(my_list_clock.get(pos)<=list_clock_pending.get(pos)) {
 				canLog=false;
 				break;
 			}
@@ -245,7 +245,7 @@ public class MyLogger {
 		return canLog;
 	}
 	
-	public String get_list_clock(){
+	public String get_string_my_clock(){
 		//puoi semplificare con unsemplice for che stampa tutti gli elementi in una stringa separati da uno spazio0
 		String a = my_list_clock.toString();
 		a = a.substring(1,a.length()-1);
@@ -257,6 +257,46 @@ public class MyLogger {
 		}
 		String string =str.toString();
 		return string;    //example: string=="1 2 3"
+	}
+	public List<Integer> get_list_sender_clock(String str_clock){
+		List<Integer> new_clock_list=new ArrayList<Integer>();
+		Scanner scan=new Scanner(str_clock);
+		while(scan.hasNextInt()) {
+			new_clock_list.add(scan.nextInt());
+		}
+		return new_clock_list;
+	}
+	
+	public void store_log(String msg_log, String str_clock) {
+		map_store_log.put(msg_log,str_clock);
+	}
+
+	public void check_log() throws java.lang.InterruptedException {
+		while(true) {
+			for(String stored_log : map_store_log.keySet()) {
+				String senderId=stored_log.substring(2);
+				senderId=senderId.substring(0,senderId.indexOf(" "));
+				if(can_log(get_list_sender_clock(map_store_log.get(stored_log)),Integer.valueOf(senderId))) {
+					add(stored_log);
+				}
+			}
+			try {
+				if(map_store_log.size()<300) {
+					Thread.sleep(1000);
+				}
+				else if(map_store_log.size()<9500) {
+					Thread.sleep(2000);
+				}
+				else if(map_store_log.size()<50000){
+					Thread.sleep(4000);
+				}
+				else {
+					Thread.sleep(4000);
+				}
+			} catch(java.lang.InterruptedException e) {
+				e.printStackTrace();
+			}
+		}
 	}
 	
 	synchronized public void add_set_missing(int IDOriginalSender, int myId, int message, String string_clock) {
@@ -270,7 +310,7 @@ public class MyLogger {
 				while(jj<maps_ack.size()) {
 					if( maps_ack.get(jj).containsKey((Object)missing_content)) {
 						if(missing_content.equals("3 2 4")) {
-							System.out.println("RIPETOOOO e IDOriginalSender == " + IDOriginalSender);
+							//System.out.println("RIPETOOOO e IDOriginalSender == " + IDOriginalSender);
 						}
 						return;
 					}
@@ -297,20 +337,18 @@ public class MyLogger {
 		maps_ack.get(IDOriginalSender-1).put(logAck,"");			//1 2 int the receiver, 2 if the process is the sender
 	}
 	
-	public int getSize() {
-		return logs_ack_set.size();
-	}
+
 	
 	public void check() {
 		for(int i=0; i<sets_missing.size();i++) {
 			Iterator iter = maps_ack.get(i).keySet().iterator();
 		    while (iter.hasNext()) {
 		    	String aa=(String)iter.next();
-	    		System.out.println("messaggio da check " + aa);
+	    		//System.out.println("messaggio da check " + aa);
 				for(int y=0; y<sets_missing.size();y++) {
 		    		if(null!=sets_missing.get(y).get((Object)aa)){
-			    		System.out.println("Ora leggo il valore alla Key data " + sets_missing.get(y).get((Object)aa));
-			    		System.out.println("Ora RIMUOVO il valore alla Key data " + sets_missing.get(y).remove((Object)aa));
+			    		//System.out.println("Ora leggo il valore alla Key data " + sets_missing.get(y).get((Object)aa));
+			    		//System.out.println("Ora RIMUOVO il valore alla Key data " + sets_missing.get(y).remove((Object)aa));
 		    		}
 				}
 		    }
@@ -319,48 +357,10 @@ public class MyLogger {
 	
 	public void writeOutput() {
 		System.out.println("*** NUMBER OF LOGS *** == " + logs.size());
-		System.out.println("\n*** maps_ack*** == " + maps_ack);
-		System.out.println("\n*** sets_missing*** == " + sets_missing);
-
-		ArrayList<Integer> listb = new ArrayList<Integer>();
-		listd = new ArrayList[hostsNumber];
-		ArrayList<Integer> arrl = null;
-		for(int i=0;i<listd.length;i++) {
-			listd[i] = new ArrayList<Integer>();
-		}	
-
 		try(BufferedWriter fileWriter = new BufferedWriter(new FileWriter(outputPath))) {
 			Iterator <String> iter = logs.keySet().iterator();
 			while(iter.hasNext()) {
-				String a = iter.next();
-				if(a.charAt(0)=='b') {
-					int bNum = Integer.valueOf(a.substring(2,a.indexOf('\n')));
-					listb.add(bNum);
-				}
-				else if(a.charAt(0)=='d') {
-					Scanner scan = new Scanner(a.substring(2));
-					String c= a.substring(2);
-					int dFirstNum = Integer.valueOf(c.substring(0,c.indexOf(' ')));
-					int dSecondNum = Integer.valueOf(c.substring(c.indexOf(" ")+1,c.indexOf('\n')));
-					if(listd!=null) {
-						listd[dFirstNum-1].add(dSecondNum);
-					}
-				}
-				else{
-					fileWriter.write(a);
-				}
-			}
-			Collections.sort(listb);
-			for(int num : listb) {
-				fileWriter.write("b " + num + "\n");
-			}
-
-			for(int i=0;i<listd.length;i++) {
-				Collections.sort(listd[i]);
-				for(Integer element : listd[i]) {
-					int x=i+1;
-					fileWriter.write("d " + x + " " + element + "\n");
-				}
+				fileWriter.write(iter.next());
 			}
 		}
 		catch (IOException e) {

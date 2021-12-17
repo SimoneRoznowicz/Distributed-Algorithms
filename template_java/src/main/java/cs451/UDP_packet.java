@@ -106,6 +106,7 @@ public class UDP_packet {
 				str = "b " + a + "\n";
 				//System.out.println("what I am going to log  " + str + "STR.LENGTH() == " + str.length());
 		    	logger.add(str);
+		    	logger.update_list_clock(parser.myId());
 		    	if(index$==-1)
 					break;
 		    	for(int i=0;i<orig_modif_msg.length();i++) {
@@ -125,17 +126,16 @@ public class UDP_packet {
 	}
 	
 	public void receive() {
-	    /*Thread myThread = new Thread(){
+	   Thread myThread = new Thread(){
 	    	public void run(){
-	    		
-	    		
-	    		///CAMBIARE!!!!!!!!!!!!!!!!
-	    		
-	    		
-	    		//if(logger.can_log());
+	    		try {
+	    			logger.check_log();
+	    		} catch(java.lang.InterruptedException e) {
+	    			e.printStackTrace();
+	    		}
 		    }
 	    };
-	    myThread.start();*/
+	    myThread.start();
 	    
 		DatagramSocket dsr = null;
 		
@@ -266,10 +266,14 @@ public class UDP_packet {
 					}
 					if(IDsender!=parser.myId() && IDOriginalSender!=parser.myId()) {
 						//METTICI LE CONDIZIONI PER PASSARE:
-						if(index$==-1) {
-							//System.out.println("msg_log 1 |||||||||== "+ msg_log);
+						if(logger.can_log(logger.get_list_sender_clock(str_clock),IDOriginalSender)==true) {
+							logger.update_list_clock(IDOriginalSender);
+							logger.add(msg_log);
 						}
-						logger.add(msg_log);
+						else {
+							//store the log..it will be logged later
+							logger.store_log(msg_log,str_clock);
+						}
 					}
 					
 					DatagramSocket ds1 = new DatagramSocket();
