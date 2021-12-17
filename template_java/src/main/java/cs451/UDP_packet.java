@@ -161,8 +161,11 @@ public class UDP_packet {
 			while (true) {		//keeps receiving 
 				dsr.receive(dpr);		//should ha 1 4 where 1 is the ID of the process and 4 the number of the message
 			    String msg = new String(dpr.getData(), 0, dpr.getLength());
-    	    	//System.out.println("receive message origin: " + msg);
+				//System.out.println("ACKNOWLEDGEMENT MESSAGE RECEIVED: " + msg);
+
+			    //System.out.println("receive message origin: " + msg);
 			    if(msg.charAt(0)!=('r')) {
+			    	
 			    	ClientHandler clientSock = new ClientHandler(msg);
 		            client_handle1.execute(clientSock);
 			    }
@@ -190,16 +193,17 @@ public class UDP_packet {
   
         public void run() {
         	//in the block of messages, if the first is r, then all the others are r
+
         	msg=msg.substring(2);   //es r 1 1 43 ---> 1 1 43 (43rd acknowledgement message received form host 1)
 			Scanner s = new Scanner(msg);
 			//System.out.println("ACK MESSAGE ===== " + msg);
 			int IDsender = s.nextInt();
 			int IDOriginalSender = s.nextInt();
 			int num_mess=s.nextInt();
-			for(int j=1;j<=parser.hosts().size();j++) {
-				msg=IDOriginalSender+ " " + j + " " + num_mess;
-	        	logger.addAck(IDOriginalSender, msg);
-			}
+		//for(int j=1;j<=parser.hosts().size();j++) {
+				String msg_logg=IDOriginalSender+ " " + parser.myId() + " " + num_mess;
+	        	logger.addAck(IDOriginalSender, msg_logg);
+			//}
         	//logger.addAck(IDOriginalSender, msg);
         }
 	}
@@ -222,6 +226,8 @@ public class UDP_packet {
     				}
     			}
     	    	int iteration=0;
+    	    	//System.out.println("MESSAGE TO PREPARE FOR THE ACKNOWLEDGEMENT == " + msg);
+
     	    	String orig_modif_msg=msg;
     	    	while(iteration<(count$+1)) {
 	    	    	//ci sono count$+1 messaggi
@@ -239,6 +245,8 @@ public class UDP_packet {
 	    	    	
 	    	    	String str_clock = msg.substring(0,index);
 	    	    	msg=msg.substring(index+1);
+	    	    	//System.out.println("MESSAGE TO PREPARE FOR THE ACKNOWLEDGEMENT 2== " + msg);
+
 			    	Scanner s = new Scanner(msg);
 					int IDsender = s.nextInt();		//id of the last sender
 					int IDOriginalSender = s.nextInt();		//id of the original first sender
@@ -253,6 +261,7 @@ public class UDP_packet {
 				    	}
 				    }
 					String ack_buf = "r " + IDsender + " " + IDOriginalSender + " " + numberMessage;   //--> r 1 2 43    (acknowledgement message 43 from process 2 on behalf of process 1)
+					System.out.println("ACKNOWLEDGEMENT MESSAGE SENT: " + ack_buf);
 					index$=-1;
 					for(int i=0;i<msg.length();i++) {
 	    	    		if(msg.charAt(i)=='$') {
@@ -285,18 +294,19 @@ public class UDP_packet {
 					}
 					
 					DatagramSocket ds1 = new DatagramSocket();
+					System.out.println("sender port sent ack === " + senderPort);
 					DatagramPacket dp1 = new DatagramPacket(ack_buf.getBytes(), ack_buf.length(), ip, senderPort);
 					ds1.send(dp1);
 					ds1.close();
 					
 	
 					//here I broadcast this message to all the other processes
-					for (Host host: parser.hosts()) {
+					/*for (Host host: parser.hosts()) {
 				    	if(host.getId() != IDsender) {
 				    		//dovrei aggiungere solo se non ho ack
 							logger.add_set_missing(IDOriginalSender, parser.myId(), numberMessage, str_clock);
 				    	}
-				    }
+				    }*/
 					//reduce the length of string msg for the next iteration
 					iteration++;
 					if(index$==-1)

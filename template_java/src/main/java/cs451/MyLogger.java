@@ -78,13 +78,13 @@ public class MyLogger {
 		System.out.println("TOT NUM MESSAGES **********************== " + tot_number_messages);
 		endd=true;
 		
-		for (int i=0; i<hostsNumber; i++) {
+		//for (int i=0; i<hostsNumber; i++) {
 			HashSet<String> set = new HashSet<String>();
 			ConcurrentHashMap<String,String> map1 = new ConcurrentHashMap<String,String>();
 			ConcurrentHashMap<String,String> map2 = new ConcurrentHashMap<String,String>();
 			maps_ack.add(map1);
 			sets_missing.add(map2);
-		}
+		//}
 
 		//initialize set_missing with all the elements to be sent
 		for (int i=0; i<tot_number_messages; i++) {
@@ -92,11 +92,11 @@ public class MyLogger {
 				if(host.getId() != myId) {
 					int b=i+1;		//id di un host che deve mandare il msg, numero del messaggio che deve inviare --> es. 1 43
 					String content=host.getId() + " " + myId + " " + b;  //il tipo a cui mando il messaggio, il mio nome cosi' si sa che ho mandato io e il numero del messaggio
-					sets_missing.get(parser.myId()-1).put(content,"");	
+					sets_missing.get(0).put(content,"");	
 				}
 			}
 		}
-		//System.out.println("THIS IS THE INITIAL SETS_MISSING: \n" + sets_missing + "\n\n");
+		System.out.println("THIS IS THE INITIAL SETS_MISSING: \n" + sets_missing + "\n\n");
 	}
 	
 	
@@ -206,13 +206,13 @@ public class MyLogger {
 				}
 			}				
 			try {
-				if(sets_missing.get(parser.myId()-1).size()<300) {
+				if(sets_missing.get(0).size()<300) {
 					Thread.sleep(400);
 				}
-				else if(sets_missing.get(parser.myId()-1).size()<9500) {
+				else if(sets_missing.get(0).size()<9500) {
 					Thread.sleep(2000);
 				}
-				else if(sets_missing.get(parser.myId()-1).size()<50000){
+				else if(sets_missing.get(0).size()<50000){
 					Thread.sleep(4000);
 				}
 				else {
@@ -389,7 +389,7 @@ public class MyLogger {
 					//}
 					//jj++;
 				//}
-				//sets_missing.get(IDOriginalSender-1).put(missing_content,string_clock);			//es. 2 43 The information IDOriginalSender is indexOf the set in the array + 1
+				//sets_missing.get(0).put(missing_content,string_clock);			//es. 2 43 The information IDOriginalSender is indexOf the set in the array + 1
 				
 				/*if(!sets_missing.get(IDOriginalSender-1).containsKey(missing_content) && (!maps_ack.get(IDOriginalSender-1).containsKey((Object)missing_content))) {
 					sets_missing.get(IDOriginalSender-1).put(missing_content,string_clock);			//es. 2 43 The information IDOriginalSender is indexOf the set in the array + 1
@@ -429,12 +429,13 @@ public class MyLogger {
 	
 	
 	public void addAck(int IDOriginalSender, String logAck) {
-		maps_ack.get(IDOriginalSender-1).put(logAck,"");			//1 2 int the receiver, 2 if the process is the sender
+		maps_ack.get(0).put(logAck,"");			//1 2 int the receiver, 2 if the process is the sender
 	}
 	
 
 	
 	public void check() {
+		//CREDO SI POSSA RIASSUMERE SCRIVENDO 
 		for(int i=0; i<sets_missing.size();i++) {
 			Iterator iter = maps_ack.get(i).keySet().iterator();
 		    while (iter.hasNext()) {
@@ -453,7 +454,10 @@ public class MyLogger {
 	
 	public void writeOutput() {
 		System.out.println("in CHECK_LOG size di map_store_log == " + map_store_log);
-		System.out.println("*** NUMBER OF LOGS *** == " + logs.size());
+		System.out.println("*** maps_ack *** == " + maps_ack);
+		System.out.println("*** sets_missing *** == " + sets_missing);
+		
+
 		try(BufferedWriter fileWriter = new BufferedWriter(new FileWriter(outputPath))) {
 			/*Iterator <String> iter = logs.keySet().iterator();
 			while(iter.hasNext()) {
