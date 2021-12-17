@@ -244,7 +244,10 @@ public class MyLogger {
 			//qui total causal broadcast. Se vuoi localized, guarda di confrontare solo l'entri che ti interessa
 			//ottieni id di chi ti manda il messaggio
 			//guarda da chi dipende quel process
+			System.out.println("senderIdVal is " + senderIdVal + " so I check " + list.get(senderIdVal) + " and my_list_clock is " + my_list_clock);
 			int pos=list.get(senderIdVal).get(i)-1;
+			System.out.println("my_list_clock.get(pos) " + my_list_clock.get(pos) + ", list_clock_pending.get(pos) " + list_clock_pending.get(pos));
+
 			if(my_list_clock.get(pos)<=list_clock_pending.get(pos)) {
 				canLog=false;
 				break;
@@ -287,27 +290,27 @@ public class MyLogger {
 				String temp = "b " + val +"\n";
 				if(map_store_log.containsKey(temp)) {
 					add(temp);
-					System.out.println("AGGIUNTO IN CHECK_LOG() con broadcast == " + broadcast);
+					//System.out.println("AGGIUNTO IN CHECK_LOG() con broadcast == " + broadcast);
 				}
 				else {
 					break;
 				}
 				i++;
 			}
-			/*for(int k=0;k<my_list_clock.size();k++) {
+			for(int k=0;k<my_list_clock.size();k++) {
 				while(true) {
 					int numPossibleMessage = my_list_clock.get(k)+1;
 					String temp = "d " + k + " " + numPossibleMessage +"\n";	//d originalSender numMessage
-					if(map_store_log.containsKey(temp)) {
+					if(map_store_log.containsKey(temp) && can_log(get_list_sender_clock(map_store_log.get(temp)),temp)) {
 						add(temp);
-						System.out.println("AGGIUNTO IN CHECK_LOG() con delivery == ");
+						//System.out.println("AGGIUNTO IN CHECK_LOG() con delivery == ");
 					}
 					else {
 						break;
 					}
 				}
-			}*/
-			
+			}
+			/*
 			for(String stored_log : map_store_log.keySet()) {
 				if(stored_log.charAt(0)=='b') {
 					continue;
@@ -334,7 +337,7 @@ public class MyLogger {
 				}
 			} catch(java.lang.InterruptedException e) {
 				e.printStackTrace();
-			}
+			}*/
 		}
 	}
 	
@@ -344,17 +347,17 @@ public class MyLogger {
 			if(host.getId() != myId) {
 				String missing_content=host.getId() + " " + IDOriginalSender + " " + message;
 				
-				int jj=0;
+				//int jj=0;
 				boolean ret=true;
-				while(jj<maps_ack.size()) {
-					if( maps_ack.get(jj).containsKey((Object)missing_content)) {
-						if(missing_content.equals("3 2 4")) {
+				//while(jj<maps_ack.size()) {
+					//if( maps_ack.get(jj).containsKey((Object)missing_content)) {
+						//if(missing_content.equals("3 2 4")) {
 							//System.out.println("RIPETOOOO e IDOriginalSender == " + IDOriginalSender);
-						}
-						return;
-					}
-					jj++;
-				}
+						//}
+						//return;
+					//}
+					//jj++;
+				//}
 				sets_missing.get(IDOriginalSender-1).put(missing_content,string_clock);			//es. 2 43 The information IDOriginalSender is indexOf the set in the array + 1
 				
 				/*if(!sets_missing.get(IDOriginalSender-1).containsKey(missing_content) && (!maps_ack.get(IDOriginalSender-1).containsKey((Object)missing_content))) {
@@ -404,6 +407,7 @@ public class MyLogger {
 		    		if(null!=sets_missing.get(y).get((Object)aa)){
 			    		//System.out.println("Ora leggo il valore alla Key data " + sets_missing.get(y).get((Object)aa));
 			    		//System.out.println("Ora RIMUOVO il valore alla Key data " + sets_missing.get(y).remove((Object)aa));
+		    			sets_missing.get(y).remove((Object)aa);
 		    		}
 				}
 		    }
