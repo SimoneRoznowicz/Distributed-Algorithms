@@ -168,9 +168,8 @@ public class MyLogger {
 								content = string_clock + "|" + myID + " " + missing_msg.substring(missing_msg.indexOf(" ")+1);
 							else
 								content = content + " $" + string_clock + "|" + myID + " " + missing_msg.substring(missing_msg.indexOf(" ")+1); //example  1 2 3|3 message $1 2 3|3 message     
-							if(content.charAt(0)=='$') {
-								//System.out.println("CONTENT     ===========      " + content);
-							}
+							//System.out.println("CONTENT     ===========      " + content);
+
 							y++;
 							count_done_sent++;
 							num_really_sent_thisset++;
@@ -238,12 +237,12 @@ public class MyLogger {
 		boolean canLog=true;
 		if(logs.containsKey(msg_log))
 			return false;
-		String senderId=msg_log.substring(2);  //d 2 3 tolko il d e poi leggo il 2
+		String senderId=msg_log.substring(2);  //d 2 3 tolgo il d e poi leggo il 2
+		int number_of_message=Integer.valueOf(senderId.substring(senderId.indexOf(" ")+1,senderId.indexOf("\n")));
 		int senderIdVal=Integer.valueOf(senderId.substring(0,senderId.indexOf(" ")));
-		System.out.println("list == " + list + " mentre senderID == " + senderIdVal);
-		System.out.println("senderIdVal == " + senderIdVal + " list.get(senderIdVal) " + list.get(senderIdVal) + " list.get(senderIdVal).size() " + list.get(senderIdVal).size() );
+		//System.out.println("list == " + list + " mentre senderID == " + senderIdVal);
+		//System.out.println("senderIdVal == " + senderIdVal + " list.get(senderIdVal) ");
 
-		
 		for(int i=0;i<my_list_clock.size();i++) {
 			if(my_list_clock.get(senderIdVal-1)<=list_clock_pending.get(senderIdVal-1)) {
 				for(int j=1;j<list.get(senderIdVal).size();j++) {
@@ -253,6 +252,19 @@ public class MyLogger {
 				}
 			}
 		}
+		
+		System.out.println("my_list_clock == " + my_list_clock + ",       list_clock_pending == " + list_clock_pending + ",       msg_log == " + msg_log + ",       my_list_clock.get(senderIdVal-1)== " + my_list_clock.get(senderIdVal-1));
+		/*if(my_list_clock.get(senderIdVal-1)!=(list_clock_pending.get(senderIdVal-1)+1)) {
+			canLog=false;
+		}*/
+		if((my_list_clock.get(senderIdVal-1)+1)!=number_of_message) {
+			canLog=false;
+		}
+		/*
+		 * metti che arriva messaggio da processo 2. Allora tu guardi my_list_clock in posizione 2-1
+		 * Quindi se list_clock_pending ha in posizione 2-1 il valore che ha my_list_clock in pos 2-1  + 1  ok
+		 * senno' ritorna false;
+		 * */
 		return canLog;
 		
 		/*
@@ -300,6 +312,7 @@ public class MyLogger {
 	}
 
 	public void check_log() throws java.lang.InterruptedException {
+		System.out.println("dentro check log");
 		while(true) {
 			int i=0;
 			while(true) {
@@ -314,13 +327,14 @@ public class MyLogger {
 				}
 				i++;
 			}
+			
 			for(int k=0;k<my_list_clock.size();k++) {
 				while(true) {
 					int numPossibleMessage = my_list_clock.get(k)+1;
 					String temp = "d " + k + " " + numPossibleMessage +"\n";	//d originalSender numMessage
 					if(map_store_log.containsKey(temp) && can_log(get_list_sender_clock(map_store_log.get(temp)),temp)) {
 						add(temp);
-						//System.out.println("AGGIUNTO IN CHECK_LOG() con delivery == ");
+						System.out.println("AGGIUNTO IN CHECK_LOG() " + temp);
 					}
 					else {
 						break;
@@ -375,7 +389,7 @@ public class MyLogger {
 					//}
 					//jj++;
 				//}
-				sets_missing.get(IDOriginalSender-1).put(missing_content,string_clock);			//es. 2 43 The information IDOriginalSender is indexOf the set in the array + 1
+				//sets_missing.get(IDOriginalSender-1).put(missing_content,string_clock);			//es. 2 43 The information IDOriginalSender is indexOf the set in the array + 1
 				
 				/*if(!sets_missing.get(IDOriginalSender-1).containsKey(missing_content) && (!maps_ack.get(IDOriginalSender-1).containsKey((Object)missing_content))) {
 					sets_missing.get(IDOriginalSender-1).put(missing_content,string_clock);			//es. 2 43 The information IDOriginalSender is indexOf the set in the array + 1
@@ -398,15 +412,21 @@ public class MyLogger {
 			if(log.charAt(0)=='b') {
 				broadcast++;
 			}
+			update_list_clock(senderIdVal);
 			logs.put(log,log);
 			log_queue.add(log);
-			update_list_clock(senderIdVal);
+			//System.out.println("my_list_clock subito dopo aver fatto add e aggiornato VC: " + my_list_clock);
 		}
 		if(endd==true && logs.keySet().size()==hostsNumber*tot_number_messages) {
 			System.out.println("\n*** RECEIVED ALL MESSAGES ***\n");
 			endd=false;
 		}
 	}
+	
+	public boolean logs_containsKey(String msg){
+		return /*logs.containsKey(msg) || */map_store_log.containsKey(msg);
+	}
+	
 	
 	public void addAck(int IDOriginalSender, String logAck) {
 		maps_ack.get(IDOriginalSender-1).put(logAck,"");			//1 2 int the receiver, 2 if the process is the sender
@@ -432,6 +452,7 @@ public class MyLogger {
 	}
 	
 	public void writeOutput() {
+		System.out.println("in CHECK_LOG size di map_store_log == " + map_store_log);
 		System.out.println("*** NUMBER OF LOGS *** == " + logs.size());
 		try(BufferedWriter fileWriter = new BufferedWriter(new FileWriter(outputPath))) {
 			/*Iterator <String> iter = logs.keySet().iterator();

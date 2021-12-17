@@ -271,6 +271,9 @@ public class UDP_packet {
 					}
 					if(IDsender!=parser.myId() && IDOriginalSender!=parser.myId()) {
 						//METTICI LE CONDIZIONI PER PASSARE:
+						//if(!logger.logs_containsKey(msg)) {
+						//	logger.update_list_clock(IDOriginalSender);
+						//}
 						if(logger.can_log(logger.get_list_sender_clock(str_clock),msg_log)==true) {
 							//logger.update_list_clock(IDOriginalSender);
 							logger.add(msg_log);
