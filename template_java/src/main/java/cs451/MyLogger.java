@@ -240,7 +240,23 @@ public class MyLogger {
 			return false;
 		String senderId=msg_log.substring(2);  //d 2 3 tolko il d e poi leggo il 2
 		int senderIdVal=Integer.valueOf(senderId.substring(0,senderId.indexOf(" ")));
-		for(int i=1;i<list.get(senderIdVal).size();i++) { //da uno perche' il primo numero indica ID, il secondo indica le dependencies
+		System.out.println("list == " + list + " mentre senderID == " + senderIdVal);
+		System.out.println("senderIdVal == " + senderIdVal + " list.get(senderIdVal) " + list.get(senderIdVal) + " list.get(senderIdVal).size() " + list.get(senderIdVal).size() );
+
+		
+		for(int i=0;i<my_list_clock.size();i++) {
+			if(my_list_clock.get(senderIdVal-1)<=list_clock_pending.get(senderIdVal-1)) {
+				for(int j=1;j<list.get(senderIdVal).size();j++) {
+					if(senderIdVal==list.get(senderIdVal).get(j)) {
+						canLog=false;
+					}
+				}
+			}
+		}
+		return canLog;
+		
+		/*
+		for(int i=0;i<list.get(senderIdVal).size();i++) { //da uno perche' il primo numero indica ID, il secondo indica le dependencies
 			//qui total causal broadcast. Se vuoi localized, guarda di confrontare solo l'entri che ti interessa
 			//ottieni id di chi ti manda il messaggio
 			//guarda da chi dipende quel process
@@ -254,6 +270,7 @@ public class MyLogger {
 			}
 		}
 		return canLog;
+		*/
 	}
 	
 	public String get_string_my_clock(){
