@@ -79,7 +79,6 @@ public class UDP_packet {
     	    			break;
     	    		}
     	    	}
-    	    	//System.out.println("str........ " + str.length() + " str == " + str + "index == "+ index);
     	    	if(str.length()==0)
     	    		break;
     	    	str=str.substring(index+1);
@@ -111,7 +110,6 @@ public class UDP_packet {
 				else {
 					logger.store_log(str,"");
 				}
-		    	//logger.update_list_clock(parser.myId());
 		    	if(index$==-1)
 					break;
 		    	for(int i=0;i<orig_modif_msg.length();i++) {
@@ -149,8 +147,8 @@ public class UDP_packet {
 		} catch(SocketException e) {
 			e.printStackTrace();
 		}
-	    byte[] rec_buf = new byte[1024];  
-	    DatagramPacket dpr = new DatagramPacket(rec_buf, 1024);
+	    byte[] rec_buf = new byte[70];  
+	    DatagramPacket dpr = new DatagramPacket(rec_buf, 70);
 	    ThreadPoolExecutor client_handle1=null;
 	    ThreadPoolExecutor client_handle2=null;
 	    try {
@@ -200,11 +198,8 @@ public class UDP_packet {
 			int IDsender = s.nextInt();
 			int IDOriginalSender = s.nextInt();
 			int num_mess=s.nextInt();
-		//for(int j=1;j<=parser.hosts().size();j++) {
-				String msg_logg=IDOriginalSender+ " " + parser.myId() + " " + num_mess;
-	        	logger.addAck(IDOriginalSender, msg_logg);
-			//}
-        	//logger.addAck(IDOriginalSender, msg);
+			String msg_logg=IDOriginalSender+ " " + parser.myId() + " " + num_mess;
+        	logger.addAck(IDOriginalSender, msg_logg);
         }
 	}
 	
@@ -217,8 +212,6 @@ public class UDP_packet {
   
         public void run() {
     	    try {
-    	    	//count how many $ you have
-    	    	//System.out.println("receive message: " + msg);
     	    	int count$=0;
     	    	for(int i=0;i<msg.length();i++) {
     				if(msg.charAt(i)=='$') {
