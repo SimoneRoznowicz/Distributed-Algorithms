@@ -105,8 +105,13 @@ public class UDP_packet {
 				}
 				str = "b " + a + "\n";
 				//System.out.println("what I am going to log  " + str + "STR.LENGTH() == " + str.length());
-		    	logger.add(str);
-		    	logger.update_list_clock(parser.myId());
+				if(Integer.valueOf(a)==(logger.get_broadcast()+1)) {
+					logger.add(str);
+				}
+				else {
+					logger.store_log(str,"");
+				}
+		    	//logger.update_list_clock(parser.myId());
 		    	if(index$==-1)
 					break;
 		    	for(int i=0;i<orig_modif_msg.length();i++) {
@@ -237,7 +242,7 @@ public class UDP_packet {
 			    	Scanner s = new Scanner(msg);
 					int IDsender = s.nextInt();		//id of the last sender
 					int IDOriginalSender = s.nextInt();		//id of the original first sender
-					logger.update_list_clock(IDOriginalSender);
+					//logger.update_list_clock(IDOriginalSender);
 					int numberMessage = s.nextInt();
 				    origin = IDsender + "";
 				    int senderPort = 0;
@@ -266,8 +271,8 @@ public class UDP_packet {
 					}
 					if(IDsender!=parser.myId() && IDOriginalSender!=parser.myId()) {
 						//METTICI LE CONDIZIONI PER PASSARE:
-						if(logger.can_log(logger.get_list_sender_clock(str_clock),IDOriginalSender)==true) {
-							logger.update_list_clock(IDOriginalSender);
+						if(logger.can_log(logger.get_list_sender_clock(str_clock),msg_log)==true) {
+							//logger.update_list_clock(IDOriginalSender);
 							logger.add(msg_log);
 						}
 						else {

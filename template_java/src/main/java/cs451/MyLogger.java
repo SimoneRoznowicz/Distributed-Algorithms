@@ -35,7 +35,8 @@ public class MyLogger {
 	List<Integer> my_list_clock = Collections.synchronizedList(new ArrayList<Integer>());
 	List<List<Integer>> list;
 	ConcurrentHashMap<String,String> map_store_log = new ConcurrentHashMap<String,String>(); 
-
+	ConcurrentLinkedQueue<String> log_queue = new ConcurrentLinkedQueue<String>();
+	
 	private Parser parser;
 	private String outputPath;
 	private int hostsNumber;
@@ -45,11 +46,12 @@ public class MyLogger {
 	long end;
 	private int tot_number_messages;
 	int myId;
-	
+	int broadcast;
 	ArrayList<Integer>[] listd;
 	
 	
 	public MyLogger(Parser parser, List<List<Integer>> list) {
+		broadcast=0;
 		this.parser=parser;
 		this.outputPath=parser.output();
 		this.list = list;
@@ -94,7 +96,7 @@ public class MyLogger {
 				}
 			}
 		}
-		System.out.println("THIS IS THE INITIAL SETS_MISSING: \n" + sets_missing + "\n\n");
+		//System.out.println("THIS IS THE INITIAL SETS_MISSING: \n" + sets_missing + "\n\n");
 	}
 	
 	
@@ -224,19 +226,25 @@ public class MyLogger {
 	}
 	
 	
-	
+	public int get_broadcast() {
+		return broadcast;
+	}
 	
 	public void update_list_clock(int id) {		//the receiver updates the value in a cell everytime a message arrives (id is the id of the sender)
 		my_list_clock.set(id-1,my_list_clock.get(id-1)+1);
 	}
 	
-	synchronized boolean can_log(List<Integer> list_clock_pending, int senderId) {
+	synchronized boolean can_log(List<Integer> list_clock_pending, String msg_log) {
 		boolean canLog=true;
-		for(int i=1;i<list.get(senderId).size();i++) { //da uno perche' il primo numero indica ID, il secondo indica le dependencies
+		if(logs.containsKey(msg_log))
+			return false;
+		String senderId=msg_log.substring(2);  //d 2 3 tolko il d e poi leggo il 2
+		int senderIdVal=Integer.valueOf(senderId.substring(0,senderId.indexOf(" ")));
+		for(int i=1;i<list.get(senderIdVal).size();i++) { //da uno perche' il primo numero indica ID, il secondo indica le dependencies
 			//qui total causal broadcast. Se vuoi localized, guarda di confrontare solo l'entri che ti interessa
 			//ottieni id di chi ti manda il messaggio
 			//guarda da chi dipende quel process
-			int pos=list.get(senderId).get(i)-1;
+			int pos=list.get(senderIdVal).get(i)-1;
 			if(my_list_clock.get(pos)<=list_clock_pending.get(pos)) {
 				canLog=false;
 				break;
@@ -273,10 +281,27 @@ public class MyLogger {
 
 	public void check_log() throws java.lang.InterruptedException {
 		while(true) {
+			int i=0;
+			while(true) {
+				int val=broadcast+1;
+				String temp = "b " + val +"\n";
+				if(map_store_log.containsKey(temp)) {
+					add(temp);
+					System.out.println("AGGIUNTO IN CHECK_LOG() con broadcast == " + broadcast);
+				}
+				else {
+					break;
+				}
+				i++;
+			}
 			for(String stored_log : map_store_log.keySet()) {
+				if(stored_log.charAt(0)=='b') {
+					continue;
+				}
 				String senderId=stored_log.substring(2);
 				senderId=senderId.substring(0,senderId.indexOf(" "));
-				if(can_log(get_list_sender_clock(map_store_log.get(stored_log)),Integer.valueOf(senderId))) {
+				if(can_log(get_list_sender_clock(map_store_log.get(stored_log)),stored_log)) {
+					//System.out.println("logged from map_store_log");
 					add(stored_log);
 				}
 			}
@@ -326,7 +351,23 @@ public class MyLogger {
 	}
 	
 	public void add(String log) {
-		logs.put(log,log);
+		String senderId=null;
+		int senderIdVal=-1;
+		if(log.charAt(0)=='b') {
+			senderIdVal=parser.myId();
+		}
+		else {
+			senderId=log.substring(2);
+			senderIdVal=Integer.valueOf(senderId.substring(0,senderId.indexOf(" ")));
+		}
+		if(!logs.containsKey(log)) {
+			if(log.charAt(0)=='b') {
+				broadcast++;
+			}
+			logs.put(log,log);
+			log_queue.add(log);
+			update_list_clock(senderIdVal);
+		}
 		if(endd==true && logs.keySet().size()==hostsNumber*tot_number_messages) {
 			System.out.println("\n*** RECEIVED ALL MESSAGES ***\n");
 			endd=false;
@@ -358,9 +399,12 @@ public class MyLogger {
 	public void writeOutput() {
 		System.out.println("*** NUMBER OF LOGS *** == " + logs.size());
 		try(BufferedWriter fileWriter = new BufferedWriter(new FileWriter(outputPath))) {
-			Iterator <String> iter = logs.keySet().iterator();
+			/*Iterator <String> iter = logs.keySet().iterator();
 			while(iter.hasNext()) {
 				fileWriter.write(iter.next());
+			}*/
+			while(!log_queue.isEmpty()) {
+				fileWriter.write(log_queue.poll());
 			}
 		}
 		catch (IOException e) {
